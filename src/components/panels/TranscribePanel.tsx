@@ -56,8 +56,14 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
   });
   const [showKey, setShowKey] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [progressMsg, setProgressMsg] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Live debug activity logs
+  const [logs, setLogs] = useState<Array<{ id: number; time: string; msg: string; type: 'info' | 'error' | 'success' }>>([]);
+  const [showLogs, setShowLogs] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Result state
   const [result, setResult] = useState<TranscriptionResult | null>(null);
@@ -67,6 +73,24 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
   // Mini Audio Player State
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
+  const addLog = (msg: string, type: 'info' | 'error' | 'success' = 'info') => {
+    const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLogs((prev) => [...prev.slice(-20), { id: Date.now() + Math.random(), time, msg, type }]);
+  };
+
+  // Timer while transcribing
+  useEffect(() => {
+    let interval: any;
+    if (isTranscribing) {
+      setElapsedSeconds(0);
+      const start = Date.now();
+      interval = setInterval(() => {
+        setElapsedSeconds(Number(((Date.now() - start) / 1000).toFixed(1)));
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isTranscribing]);
 
   // Load saved keys based on engine
   useEffect(() => {
@@ -97,27 +121,51 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
     }
   };
 
+  const handleCancelTranscribe = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      addLog('Transcription cancelled by user.', 'error');
+    }
+    setIsTranscribing(false);
+  };
+
   const handleStartTranscribe = async () => {
     setErrorMsg(null);
+    setLogs([]);
+    setShowLogs(true);
 
     if (!audioUrl && !audioBlob && !audioFile) {
-      setErrorMsg('Please import an audio or video file first.');
+      const err = 'Please import an audio or video file first.';
+      setErrorMsg(err);
+      addLog(err, 'error');
       return;
     }
 
     if ((engine === 'groq' || engine === 'openai') && !apiKey.trim()) {
-      setErrorMsg(`Please enter your ${engine === 'groq' ? 'Groq' : 'OpenAI'} API key.`);
+      const err = `Please enter your ${engine === 'groq' ? 'Groq' : 'OpenAI'} API key.`;
+      setErrorMsg(err);
+      addLog(err, 'error');
       return;
     }
 
+    const abortCtrl = new AbortController();
+    abortControllerRef.current = abortCtrl;
+
+    // 30 second safety timeout
+    const timeoutId = setTimeout(() => {
+      abortCtrl.abort();
+      addLog('Timeout: Server took longer than 30s to respond.', 'error');
+    }, 30000);
+
     try {
       setIsTranscribing(true);
+      addLog(`Initializing ${engine === 'groq' ? 'Groq Whisper-large-v3' : engine === 'openai' ? 'OpenAI Whisper-1' : 'WebSpeech'}...`);
       setProgressMsg('Preparing audio file...');
 
       let targetBlob: Blob | File | null = audioBlob || audioFile;
 
       if (!targetBlob && audioUrl) {
-        setProgressMsg('Buffering audio stream...');
+        addLog('Fetching audio blob from URL...');
         const response = await fetch(audioUrl);
         targetBlob = await response.blob();
       }
@@ -129,22 +177,43 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
       let res: TranscriptionResult;
 
       if (engine === 'groq') {
-        setProgressMsg('Whisper-large-v3 (~2s)...');
-        res = await transcribeWithGroq(targetBlob!, apiKey);
+        res = await transcribeWithGroq(
+          targetBlob!,
+          apiKey,
+          (msg) => {
+            setProgressMsg(msg);
+            addLog(msg);
+          },
+          abortCtrl.signal
+        );
       } else if (engine === 'openai') {
-        setProgressMsg('Whisper-1 transcribing...');
-        res = await transcribeWithOpenAI(targetBlob!, apiKey);
+        res = await transcribeWithOpenAI(
+          targetBlob!,
+          apiKey,
+          (msg) => {
+            setProgressMsg(msg);
+            addLog(msg);
+          },
+          abortCtrl.signal
+        );
       } else {
-        setProgressMsg('WebSpeech listening...');
+        addLog('Starting browser speech recognition...');
         res = await transcribeWithBrowserSpeech(audioUrl!, audioDuration);
       }
 
+      clearTimeout(timeoutId);
       setResult(res);
+      addLog(`Done! Generated ${res.cues.length} cues in ${elapsedSeconds}s.`, 'success');
       setProgressMsg('');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Transcription failed. Check your API key.');
+      clearTimeout(timeoutId);
+      const isAbort = err.name === 'AbortError';
+      const msg = isAbort ? 'Request timed out or cancelled.' : err.message || 'Transcription failed.';
+      setErrorMsg(msg);
+      addLog(msg, 'error');
     } finally {
       setIsTranscribing(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -152,6 +221,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
     if (!result) return;
     navigator.clipboard.writeText(result.srtContent);
     setCopied(true);
+    addLog('Copied SRT to clipboard!', 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -164,6 +234,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
     a.download = `voiceover_transcript.srt`;
     a.click();
     URL.revokeObjectURL(url);
+    addLog('Downloaded voiceover_transcript.srt', 'success');
   };
 
   return (
@@ -316,30 +387,87 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
           </div>
         )}
 
-        {/* Primary Transcribe Trigger Button */}
-        <button
-          onClick={handleStartTranscribe}
-          disabled={isTranscribing || !audioUrl}
-          className={`w-full h-9 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
-            !audioUrl
-              ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]'
-          }`}
-        >
-          <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isTranscribing ? 'animate-spin' : ''}`} />
-          <span className="truncate">
-            {isTranscribing
-              ? progressMsg || 'Transcribing...'
-              : !audioUrl
-              ? 'Upload Audio to Transcribe'
-              : 'Transcribe to Timed SRT'}
-          </span>
-        </button>
+        {/* Primary Transcribe Trigger Button with Live Elapsed Seconds */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleStartTranscribe}
+            disabled={isTranscribing || !audioUrl}
+            className={`flex-1 h-9 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
+              !audioUrl
+                ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isTranscribing ? 'animate-spin' : ''}`} />
+            <span className="truncate">
+              {isTranscribing
+                ? `${progressMsg || 'Transcribing'} (${elapsedSeconds}s)...`
+                : !audioUrl
+                ? 'Upload Audio to Transcribe'
+                : 'Transcribe to Timed SRT'}
+            </span>
+          </button>
+
+          {isTranscribing && (
+            <button
+              onClick={handleCancelTranscribe}
+              className="h-9 px-3 rounded-xl bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/30 font-semibold text-xs transition-colors shrink-0"
+              title="Cancel transcription"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
 
         {errorMsg && (
           <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-1.5 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span className="leading-tight text-[11px]">{errorMsg}</span>
+            <span className="leading-tight text-[11px] font-medium">{errorMsg}</span>
+          </div>
+        )}
+
+        {/* ── Live Activity & API Log Console Box ─────────────────────── */}
+        {logs.length > 0 && (
+          <div className="rounded-xl border border-border bg-background/80 overflow-hidden shadow-2xs animate-in fade-in">
+            <div
+              onClick={() => setShowLogs(!showLogs)}
+              className="px-3 py-1.5 bg-muted/50 border-b border-border flex items-center justify-between cursor-pointer hover:bg-muted/70 transition-colors"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isTranscribing ? 'bg-amber-500 animate-pulse' : errorMsg ? 'bg-destructive' : 'bg-emerald-500'}`} />
+                <span className="text-[10px] font-mono font-bold text-foreground">
+                  Activity Logs ({logs.length})
+                </span>
+                {isTranscribing && (
+                  <span className="text-[9px] font-mono text-primary font-bold">
+                    {elapsedSeconds}s
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                {showLogs ? 'Hide' : 'Show'}
+              </span>
+            </div>
+
+            {showLogs && (
+              <div className="p-2.5 font-mono text-[10px] leading-relaxed max-h-36 overflow-y-auto space-y-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-black/20">
+                {logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={`flex items-start gap-1.5 ${
+                      log.type === 'error'
+                        ? 'text-red-400 font-semibold'
+                        : log.type === 'success'
+                        ? 'text-emerald-400 font-semibold'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    <span className="opacity-50 select-none text-[9px]">[{log.time}]</span>
+                    <span className="break-all">{log.msg}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -45,31 +45,124 @@ export function buildSrtString(cues: TranscriptCue[]): string {
 }
 
 /**
+ * Downsamples any audio Blob to a lightweight 16kHz Mono 16-bit PCM WAV Blob.
+ * 16kHz Mono reduces audio payload by ~85% (e.g. 15MB -> 1.5MB), preventing Groq size limits & timeouts.
+ */
+export async function downsampleAudioForWhisper(
+  audioBlobOrFile: Blob | File,
+  onProgress?: (msg: string) => void
+): Promise<Blob> {
+  try {
+    onProgress?.('Optimizing audio stream (16kHz mono)...');
+    console.log('[Whisper] Starting audio downsampling for Whisper...');
+    const arrayBuffer = await audioBlobOrFile.arrayBuffer();
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({
+      sampleRate: 16000,
+    });
+
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+    const numChannels = 1; // mono is ideal for speech-to-text
+    const sampleRate = 16000;
+    const channelData = decoded.getChannelData(0); // Take first channel
+
+    // If original was stereo, average channels
+    if (decoded.numberOfChannels > 1) {
+      const ch2 = decoded.getChannelData(1);
+      for (let i = 0; i < channelData.length; i++) {
+        channelData[i] = (channelData[i] + ch2[i]) / 2;
+      }
+    }
+
+    const length = channelData.length * 2 + 44;
+    const outBuffer = new ArrayBuffer(length);
+    const view = new DataView(outBuffer);
+
+    let pos = 0;
+    const setUint16 = (d: number) => { view.setUint16(pos, d, true); pos += 2; };
+    const setUint32 = (d: number) => { view.setUint32(pos, d, true); pos += 4; };
+
+    // RIFF
+    setUint32(0x46464952); // "RIFF"
+    setUint32(length - 8);
+    setUint32(0x45564157); // "WAVE"
+
+    // FMT
+    setUint32(0x20746d66); // "fmt "
+    setUint32(16);
+    setUint16(1); // PCM
+    setUint16(numChannels);
+    setUint32(sampleRate);
+    setUint32(sampleRate * 2 * numChannels);
+    setUint16(numChannels * 2);
+    setUint16(16);
+
+    // DATA
+    setUint32(0x61746164); // "data"
+    setUint32(channelData.length * 2);
+
+    for (let i = 0; i < channelData.length; i++) {
+      const s = Math.max(-1, Math.min(1, channelData[i]));
+      view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      pos += 2;
+    }
+
+    await audioCtx.close();
+    const resultBlob = new Blob([outBuffer], { type: 'audio/wav' });
+    console.log(`[Whisper] Audio optimized: ${(audioBlobOrFile.size / 1024 / 1024).toFixed(2)}MB -> ${(resultBlob.size / 1024 / 1024).toFixed(2)}MB`);
+    return resultBlob;
+  } catch (err) {
+    console.warn('[Whisper] Downsampling failed, fallback to original blob:', err);
+    return audioBlobOrFile;
+  }
+}
+
+/**
  * Transcribes an audio Blob or File using Groq Cloud Whisper API (whisper-large-v3)
  */
 export async function transcribeWithGroq(
   audioBlob: Blob | File,
-  apiKey: string
+  apiKey: string,
+  onProgress?: (msg: string) => void,
+  signal?: AbortSignal
 ): Promise<TranscriptionResult> {
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) {
+    throw new Error('Groq API Key is empty. Please enter your API key.');
+  }
+
+  // 1. Optimize audio payload to 16kHz mono WAV
+  const optimizedBlob = await downsampleAudioForWhisper(audioBlob, onProgress);
+  const sizeMB = (optimizedBlob.size / (1024 * 1024)).toFixed(2);
+  onProgress?.(`Uploading payload (${sizeMB} MB) to Groq Whisper...`);
+  console.log(`[Groq Whisper] Sending ${sizeMB} MB to Groq API with key prefix: ${cleanKey.slice(0, 7)}...`);
+
   const formData = new FormData();
-  formData.append('file', audioBlob, 'audio.wav');
+  formData.append('file', optimizedBlob, 'audio.wav');
   formData.append('model', 'whisper-large-v3');
   formData.append('response_format', 'verbose_json');
   formData.append('temperature', '0');
 
+  const startTime = Date.now();
   const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey.trim()}`,
+      Authorization: `Bearer ${cleanKey}`,
     },
     body: formData,
+    signal,
   });
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[Groq Whisper] Response status: ${res.status} in ${elapsed}s`);
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `Groq API error (${res.status}): ${res.statusText}`);
+    const errMessage = errorData.error?.message || `Groq API HTTP ${res.status}: ${res.statusText}`;
+    console.error('[Groq Whisper Error]', res.status, errorData);
+    throw new Error(errMessage);
   }
 
+  onProgress?.('Parsing timestamped segments...');
   const data = await res.json();
   const segments = data.segments || [];
 
@@ -81,6 +174,7 @@ export async function transcribeWithGroq(
   }));
 
   const srtContent = buildSrtString(cues);
+  console.log(`[Groq Whisper] Success! Generated ${cues.length} cues in ${elapsed}s`);
 
   return {
     fullText: data.text || cues.map((c) => c.text).join(' '),
@@ -96,26 +190,42 @@ export async function transcribeWithGroq(
  */
 export async function transcribeWithOpenAI(
   audioBlob: Blob | File,
-  apiKey: string
+  apiKey: string,
+  onProgress?: (msg: string) => void,
+  signal?: AbortSignal
 ): Promise<TranscriptionResult> {
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) {
+    throw new Error('OpenAI API Key is empty.');
+  }
+
+  const optimizedBlob = await downsampleAudioForWhisper(audioBlob, onProgress);
+  const sizeMB = (optimizedBlob.size / (1024 * 1024)).toFixed(2);
+  onProgress?.(`Uploading payload (${sizeMB} MB) to OpenAI...`);
+
   const formData = new FormData();
-  formData.append('file', audioBlob, 'audio.wav');
+  formData.append('file', optimizedBlob, 'audio.wav');
   formData.append('model', 'whisper-1');
   formData.append('response_format', 'verbose_json');
 
+  const startTime = Date.now();
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey.trim()}`,
+      Authorization: `Bearer ${cleanKey}`,
     },
     body: formData,
+    signal,
   });
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `OpenAI API error (${res.status}): ${res.statusText}`);
+    throw new Error(errorData.error?.message || `OpenAI API HTTP ${res.status}: ${res.statusText}`);
   }
 
+  onProgress?.('Parsing timestamped segments...');
   const data = await res.json();
   const segments = data.segments || [];
 
