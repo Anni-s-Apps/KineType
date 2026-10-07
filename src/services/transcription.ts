@@ -53,25 +53,27 @@ export async function downsampleAudioForWhisper(
   onProgress?: (msg: string) => void
 ): Promise<Blob> {
   try {
-    onProgress?.('Optimizing audio stream (16kHz mono)...');
+    onProgress?.('Downsampling to 16kHz Mono...');
     console.log('[Whisper] Starting audio downsampling for Whisper...');
     const arrayBuffer = await audioBlobOrFile.arrayBuffer();
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({
-      sampleRate: 16000,
-    });
+    
+    // Standard AudioContext to decode whatever format the audio is
+    const decodeCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const decoded = await decodeCtx.decodeAudioData(arrayBuffer.slice(0));
+    await decodeCtx.close();
 
-    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
-    const numChannels = 1; // mono is ideal for speech-to-text
-    const sampleRate = 16000;
-    const channelData = decoded.getChannelData(0); // Take first channel
+    // Use OfflineAudioContext to resample directly to 16000Hz Mono
+    const targetSampleRate = 16000;
+    const targetLength = Math.ceil(decoded.duration * targetSampleRate);
+    const offlineCtx = new OfflineAudioContext(1, targetLength, targetSampleRate);
 
-    // If original was stereo, average channels
-    if (decoded.numberOfChannels > 1) {
-      const ch2 = decoded.getChannelData(1);
-      for (let i = 0; i < channelData.length; i++) {
-        channelData[i] = (channelData[i] + ch2[i]) / 2;
-      }
-    }
+    const source = offlineCtx.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offlineCtx.destination);
+    source.start(0);
+
+    const resampledBuffer = await offlineCtx.startRendering();
+    const channelData = resampledBuffer.getChannelData(0);
 
     const length = channelData.length * 2 + 44;
     const outBuffer = new ArrayBuffer(length);
@@ -90,10 +92,10 @@ export async function downsampleAudioForWhisper(
     setUint32(0x20746d66); // "fmt "
     setUint32(16);
     setUint16(1); // PCM
-    setUint16(numChannels);
-    setUint32(sampleRate);
-    setUint32(sampleRate * 2 * numChannels);
-    setUint16(numChannels * 2);
+    setUint16(1); // mono
+    setUint32(targetSampleRate);
+    setUint32(targetSampleRate * 2);
+    setUint16(2);
     setUint16(16);
 
     // DATA
@@ -106,7 +108,6 @@ export async function downsampleAudioForWhisper(
       pos += 2;
     }
 
-    await audioCtx.close();
     const resultBlob = new Blob([outBuffer], { type: 'audio/wav' });
     console.log(`[Whisper] Audio optimized: ${(audioBlobOrFile.size / 1024 / 1024).toFixed(2)}MB -> ${(resultBlob.size / 1024 / 1024).toFixed(2)}MB`);
     return resultBlob;

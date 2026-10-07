@@ -429,11 +429,11 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
         {/* ── Live Activity & API Log Console Box ─────────────────────── */}
         {logs.length > 0 && (
           <div className="rounded-xl border border-border bg-background/80 overflow-hidden shadow-2xs animate-in fade-in">
-            <div
-              onClick={() => setShowLogs(!showLogs)}
-              className="px-3 py-1.5 bg-muted/50 border-b border-border flex items-center justify-between cursor-pointer hover:bg-muted/70 transition-colors"
-            >
-              <div className="flex items-center gap-1.5">
+            <div className="px-3 py-1.5 bg-muted/50 border-b border-border flex items-center justify-between">
+              <div
+                onClick={() => setShowLogs(!showLogs)}
+                className="flex items-center gap-1.5 cursor-pointer select-none"
+              >
                 <span className={`w-1.5 h-1.5 rounded-full ${isTranscribing ? 'bg-amber-500 animate-pulse' : errorMsg ? 'bg-destructive' : 'bg-emerald-500'}`} />
                 <span className="text-[10px] font-mono font-bold text-foreground">
                   Activity Logs ({logs.length})
@@ -444,9 +444,31 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                {showLogs ? 'Hide' : 'Show'}
-              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const logText = logs.map((l) => `[${l.time}] ${l.msg}`).join('\n');
+                    navigator.clipboard.writeText(logText);
+                    addLog('Copied all logs to clipboard!', 'success');
+                  }}
+                  className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                  title="Copy full logs text to clipboard"
+                >
+                  <Copy className="w-2.5 h-2.5" />
+                  Copy Logs
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowLogs(!showLogs)}
+                  className="text-[10px] font-mono text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showLogs ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
 
             {showLogs && (
