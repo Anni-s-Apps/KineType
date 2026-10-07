@@ -58,8 +58,11 @@ export const THEME_OPTIONS: ThemeOption[] = [
 export function useTheme() {
   const [currentTheme, setCurrentTheme] = useState<ThemeId>(() => {
     const saved = localStorage.getItem('recipecut_theme_id') as ThemeId;
-    return saved && THEME_OPTIONS.some((t) => t.id === saved) ? saved : 'dark-zinc';
+    return saved && THEME_OPTIONS.some((t) => t.id === saved) ? saved : 'light-slate';
   });
+  const [previewThemeId, setPreviewThemeId] = useState<ThemeId | null>(null);
+
+  const activeThemeId = previewThemeId || currentTheme;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -71,30 +74,40 @@ export function useTheme() {
     root.classList.remove('light', 'dark');
 
     // Add new theme class & mode class
-    const selected = THEME_OPTIONS.find((t) => t.id === currentTheme) || THEME_OPTIONS[3];
+    const selected = THEME_OPTIONS.find((t) => t.id === activeThemeId) || THEME_OPTIONS[2]; // Default to Frost Slate
     root.classList.add(selected.mode);
     root.classList.add(`theme-${selected.id}`);
 
-    localStorage.setItem('recipecut_theme_id', currentTheme);
-  }, [currentTheme]);
+    if (!previewThemeId) {
+      localStorage.setItem('recipecut_theme_id', currentTheme);
+    }
+  }, [activeThemeId, currentTheme, previewThemeId]);
 
   const setTheme = (themeId: ThemeId) => {
     setCurrentTheme(themeId);
+    setPreviewThemeId(null);
+    localStorage.setItem('recipecut_theme_id', themeId);
   };
 
-  const isDarkMode = currentTheme.startsWith('dark');
+  const previewTheme = (themeId: ThemeId | null) => {
+    setPreviewThemeId(themeId);
+  };
+
+  const isDarkMode = activeThemeId.startsWith('dark');
 
   const toggleMode = () => {
     if (isDarkMode) {
-      setCurrentTheme('light-zinc');
+      setTheme('light-slate');
     } else {
-      setCurrentTheme('dark-zinc');
+      setTheme('dark-zinc');
     }
   };
 
   return {
     currentTheme,
+    activeThemeId,
     setTheme,
+    previewTheme,
     isDarkMode,
     toggleMode,
     themes: THEME_OPTIONS,

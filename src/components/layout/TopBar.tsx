@@ -84,7 +84,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="h-11 shrink-0 border-b border-border bg-card px-3 flex items-center justify-between gap-3 select-none z-30 text-card-foreground overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <header className="h-11 shrink-0 border-b border-border bg-card px-3 flex items-center justify-between gap-3 select-none z-40 text-card-foreground relative overflow-visible">
       {/* Left: Brand, Project Title & Actions */}
       <div className="flex items-center gap-2.5 shrink-0">
         {/* Brand */}
