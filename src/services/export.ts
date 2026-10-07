@@ -23,8 +23,16 @@ export interface VideoExportOptions {
 /**
  * High-performance MP4 Video Export Engine using WebCodecs & mp4-muxer
  */
+/**
+ * High-performance MP4 Video Export Engine using WebCodecs & mp4-muxer
+ */
 export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Blob> {
   const { recipe, assets, audioBlob, onProgress, signal } = options;
+
+  // Ensure all web fonts are 100% loaded before rendering frames
+  if (document.fonts) {
+    await document.fonts.ready;
+  }
 
   const fps = recipe.settings?.fps || 30;
   const duration = recipe.settings?.duration || 10;
@@ -35,11 +43,11 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
   const width = isPortrait ? 1080 : 1920;
   const height = isPortrait ? 1920 : 1080;
 
-  // Create offscreen canvas for rendering
+  // Create standard canvas for deterministic frame rendering
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  const ctx = canvas.getContext('2d');
 
   if (!ctx) {
     throw new Error('Failed to create canvas 2D rendering context');
@@ -52,6 +60,22 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
 
   const startTimeMs = performance.now();
 
+  // Decode audio first if provided to detect true sample rate & channels
+  let audioDataBuffer: AudioBuffer | null = null;
+  let audioSampleRate = 48000;
+  if (audioBlob && typeof AudioEncoder !== 'undefined') {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      audioDataBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+      audioSampleRate = audioDataBuffer.sampleRate || 48000;
+      await audioContext.close();
+    } catch (err) {
+      console.warn('Audio decoding failed for export, proceeding video only:', err);
+      audioDataBuffer = null;
+    }
+  }
+
   // Initialize mp4-muxer
   const muxer = new Mp4Muxer.Muxer({
     target: new Mp4Muxer.ArrayBufferTarget(),
@@ -60,11 +84,11 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
       width,
       height,
     },
-    audio: audioBlob
+    audio: audioDataBuffer
       ? {
           codec: 'aac',
           numberOfChannels: 2,
-          sampleRate: 48000,
+          sampleRate: audioSampleRate,
         }
       : undefined,
     fastStart: 'in-memory',
@@ -90,12 +114,12 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
     framerate: fps,
   });
 
-  // Encode Audio if provided
-  if (audioBlob) {
+  // Encode Audio Track if decoded buffer is ready
+  if (audioDataBuffer) {
     try {
-      await encodeAudioTrack(audioBlob, muxer, duration);
+      await encodeAudioFromBuffer(audioDataBuffer, muxer, duration, audioSampleRate);
     } catch (err) {
-      console.warn('Audio muxing warning (proceeding with video only):', err);
+      console.warn('Audio encoding warning:', err);
     }
   }
 
@@ -108,7 +132,7 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
 
     const t = frameIdx / fps;
 
-    // Pure frame render
+    // Pure deterministic frame render
     renderFrame(ctx, recipe, assets, t, {
       width,
       height,
@@ -117,8 +141,8 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
 
     // Create VideoFrame from canvas
     const videoFrame = new VideoFrame(canvas, {
-      timestamp: (frameIdx * 1_000_000) / fps, // microseconds
-      duration: 1_000_000 / fps,
+      timestamp: Math.round((frameIdx * 1_000_000) / fps), // microseconds
+      duration: Math.round(1_000_000 / fps),
     });
 
     // Keyframe every 2 seconds
@@ -127,12 +151,12 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
     videoFrame.close();
 
     // Progress updates
-    if (frameIdx % 5 === 0 || frameIdx === totalFrames - 1) {
+    if (frameIdx % 10 === 0 || frameIdx === totalFrames - 1) {
       const elapsed = (performance.now() - startTimeMs) / 1000;
       const progressRatio = (frameIdx + 1) / totalFrames;
       const estimatedTotalTime = elapsed / progressRatio;
       const etaSeconds = Math.max(0, Math.round(estimatedTotalTime - elapsed));
-      const percent = Math.round(progressRatio * 100);
+      const percent = Math.min(99, Math.round(progressRatio * 100));
 
       onProgress?.({
         percent,
@@ -148,6 +172,16 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
     }
   }
 
+  onProgress?.({
+    percent: 100,
+    currentFrame: totalFrames,
+    totalFrames,
+    fps,
+    etaSeconds: 0,
+    status: 'Finalizing & packaging MP4 video...',
+  });
+  await new Promise((r) => setTimeout(r, 50));
+
   // Flush video encoder
   await videoEncoder.flush();
   videoEncoder.close();
@@ -159,20 +193,14 @@ export async function exportRecipeToMp4(options: VideoExportOptions): Promise<Bl
 }
 
 /**
- * Decodes and encodes audio with AudioEncoder into the MP4 muxer
+ * Encodes decoded AudioBuffer with AudioEncoder into the MP4 muxer
  */
-async function encodeAudioTrack(audioBlob: Blob, muxer: any, maxDuration: number) {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
-    sampleRate: 48000,
-  });
-
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-  if (typeof AudioEncoder === 'undefined') {
-    return;
-  }
-
+async function encodeAudioFromBuffer(
+  audioBuffer: AudioBuffer,
+  muxer: any,
+  maxDuration: number,
+  sampleRate: number
+) {
   const audioEncoder = new AudioEncoder({
     output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
     error: (e) => console.error('AudioEncoder error:', e),
@@ -181,12 +209,11 @@ async function encodeAudioTrack(audioBlob: Blob, muxer: any, maxDuration: number
   audioEncoder.configure({
     codec: 'mp4a.40.2', // AAC LC
     numberOfChannels: 2,
-    sampleRate: 48000,
+    sampleRate,
     bitrate: 192000,
   });
 
   const channels = Math.min(2, audioBuffer.numberOfChannels);
-  const sampleRate = audioBuffer.sampleRate;
   const channelData: Float32Array[] = [];
 
   for (let c = 0; c < 2; c++) {
@@ -206,10 +233,10 @@ async function encodeAudioTrack(audioBlob: Blob, muxer: any, maxDuration: number
 
     const audioData = new (window as any).AudioData({
       format: 'f32-planar',
-      sampleRate: 48000,
+      sampleRate,
       numberOfFrames: currentSlice,
       numberOfChannels: 2,
-      timestamp: (i * 1_000_000) / sampleRate,
+      timestamp: Math.round((i * 1_000_000) / sampleRate),
       data: planarData,
     });
 
@@ -219,7 +246,6 @@ async function encodeAudioTrack(audioBlob: Blob, muxer: any, maxDuration: number
 
   await audioEncoder.flush();
   audioEncoder.close();
-  await audioContext.close();
 }
 
 /**
