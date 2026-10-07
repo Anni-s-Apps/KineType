@@ -16,6 +16,7 @@ export const App: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isMediaUploadModalOpen, setIsMediaUploadModalOpen] = useState(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [activeSrtText, setActiveSrtText] = useState<string>('');
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -121,6 +122,9 @@ export const App: React.FC = () => {
           onOpenNewProject={() => setIsNewProjectModalOpen(true)}
           audioFile={store.audioFile}
           audioUrl={store.audioUrl}
+          audioBlob={store.audioBlob}
+          activeSrtText={activeSrtText}
+          onSrtTextChange={setActiveSrtText}
         />
 
         {/* Center Workspace (Canvas Top + Timeline Bottom) */}

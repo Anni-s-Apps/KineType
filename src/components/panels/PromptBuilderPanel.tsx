@@ -18,13 +18,17 @@ import { CustomSelect } from '../ui/CustomSelect';
 interface PromptBuilderPanelProps {
   recipe: Recipe;
   onApplyMergedRecipe: (recipe: Recipe) => void;
+  srtText?: string;
+  onSrtTextChange?: (text: string) => void;
 }
 
 export const PromptBuilderPanel: React.FC<PromptBuilderPanelProps> = ({
   recipe,
   onApplyMergedRecipe,
+  srtText,
+  onSrtTextChange,
 }) => {
-  const [srtInput, setSrtInput] = useState<string>(`1
+  const [srtInput, setSrtInput] = useState<string>(srtText || `1
 00:00:00,500 --> 00:00:05,200
 Why do 90% of developers build before they even plan?
 
@@ -35,6 +39,18 @@ Today we are looking at stateless architecture and pure canvas rendering.
 3
 00:00:12,000 --> 00:00:18,000
 Turn any voiceover into motion graphics with instant frame seeking.`);
+
+  // Sync if srtText prop changes from parent
+  React.useEffect(() => {
+    if (srtText !== undefined && srtText !== srtInput) {
+      setSrtInput(srtText);
+    }
+  }, [srtText]);
+
+  const handleSrtChange = (val: string) => {
+    setSrtInput(val);
+    if (onSrtTextChange) onSrtTextChange(val);
+  };
 
   const [chunkDuration, setChunkDuration] = useState<number>(30);
   const [sharedAssetsBlock, setSharedAssetsBlock] = useState<string>(
@@ -154,7 +170,7 @@ Turn any voiceover into motion graphics with instant frame seeking.`);
         </div>
         <textarea
           value={srtInput}
-          onChange={(e) => setSrtInput(e.target.value)}
+          onChange={(e) => handleSrtChange(e.target.value)}
           rows={5}
           placeholder="Paste timed SRT content..."
           className="w-full min-h-[110px] bg-background border border-border rounded-xl p-3 font-mono text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs resize-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

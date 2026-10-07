@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   FileVideo,
   Music,
+  Mic,
   Layers,
   Sliders,
   Sparkles,
@@ -16,6 +17,7 @@ import { AssetsPanel } from '../panels/AssetsPanel';
 import { LayersPanel } from '../panels/LayersPanel';
 import { PromptBuilderPanel } from '../panels/PromptBuilderPanel';
 import { TemplatesPanel } from '../panels/TemplatesPanel';
+import { TranscribePanel } from '../panels/TranscribePanel';
 
 interface SidebarProps {
   recipe: Recipe;
@@ -34,9 +36,12 @@ interface SidebarProps {
   onOpenNewProject: () => void;
   audioFile: File | null;
   audioUrl: string | null;
+  audioBlob?: Blob | null;
+  activeSrtText?: string;
+  onSrtTextChange?: (text: string) => void;
 }
 
-type TabKey = 'assets' | 'layers' | 'prompt-builder' | 'templates';
+type TabKey = 'transcribe' | 'assets' | 'layers' | 'prompt-builder' | 'templates';
 
 export const Sidebar: React.FC<SidebarProps> = ({
   recipe,
@@ -55,6 +60,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNewProject,
   audioFile,
   audioUrl,
+  audioBlob,
+  activeSrtText,
+  onSrtTextChange,
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey | null>('assets');
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
@@ -139,6 +147,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Music className="w-4 h-4" />
           {audioUrl && (
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-card" />
+          )}
+        </button>
+
+        {/* AI Audio Transcriber Tab */}
+        <button
+          onClick={() => handleTabClick('transcribe')}
+          className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors relative ${
+            isExpanded && activeTab === 'transcribe'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+          }`}
+          title="AI Audio Transcriber (Whisper / Timed SRT)"
+        >
+          <Mic className="w-4 h-4" />
+          {audioUrl && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
           )}
         </button>
 
@@ -236,6 +263,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           style={{ width: `${sidebarWidth}px` }}
           className="h-full flex flex-col bg-card overflow-hidden transition-none relative"
         >
+          {activeTab === 'transcribe' && (
+            <TranscribePanel
+              audioFile={audioFile}
+              audioUrl={audioUrl}
+              audioBlob={audioBlob || null}
+              onOpenAudioUpload={onOpenAudioUpload}
+              onSendToPromptBuilder={(srt) => {
+                if (onSrtTextChange) onSrtTextChange(srt);
+                setActiveTab('prompt-builder');
+                setIsExpanded(true);
+              }}
+              audioDuration={recipe.settings?.duration || 15}
+            />
+          )}
+
           {activeTab === 'assets' && (
             <AssetsPanel
               recipe={recipe}
@@ -262,6 +304,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <PromptBuilderPanel
               recipe={recipe}
               onApplyMergedRecipe={onApplyRecipe}
+              srtText={activeSrtText}
+              onSrtTextChange={onSrtTextChange}
             />
           )}
 
