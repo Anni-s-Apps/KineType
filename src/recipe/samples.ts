@@ -1,4 +1,5 @@
 import { Recipe } from '../types/recipe';
+import developerManifestoJson from './generated-developer-manifesto.json';
 
 export const SAMPLE_RECIPES: Record<string, Recipe> = {
   developerIntro: {
@@ -254,4 +255,5 @@ export const SAMPLE_RECIPES: Record<string, Recipe> = {
       },
     ],
   },
+  developerManifesto: developerManifestoJson as unknown as Recipe,
 };

@@ -64,6 +64,7 @@ Turn any voiceover into motion graphics with instant frame seeking.`);
   );
   const [chunks, setChunks] = useState<SrtChunk[]>([]);
   const [copiedChunkIdx, setCopiedChunkIdx] = useState<number | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   // Merge chunk state
   const [mergeInputs, setMergeInputs] = useState<string>('');
@@ -77,6 +78,40 @@ Turn any voiceover into motion graphics with instant frame seeking.`);
     }
     const computedChunks = chunkSrt(cues, chunkDuration);
     setChunks(computedChunks);
+  };
+
+  const handleCopyAllPrompts = () => {
+    if (chunks.length === 0) return;
+    const allText = chunks.map((chunk) => {
+      const p = generateChunkPrompt(chunk, chunks.length, {
+        aspect: recipe.settings?.aspect || '16:9',
+        fps: recipe.settings?.fps || 30,
+        sharedAssetsBlock,
+      });
+      return `/* =========================================================================\n   CHUNK ${chunk.chunkIndex} of ${chunks.length} (${chunk.startTime.toFixed(1)}s -> ${chunk.endTime.toFixed(1)}s)\n   ========================================================================= */\n\n${p}`;
+    }).join('\n\n\n');
+    navigator.clipboard.writeText(allText);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
+
+  const handleDownloadAllPrompts = () => {
+    if (chunks.length === 0) return;
+    const allText = chunks.map((chunk) => {
+      const p = generateChunkPrompt(chunk, chunks.length, {
+        aspect: recipe.settings?.aspect || '16:9',
+        fps: recipe.settings?.fps || 30,
+        sharedAssetsBlock,
+      });
+      return `/* =========================================================================\n   CHUNK ${chunk.chunkIndex} of ${chunks.length} (${chunk.startTime.toFixed(1)}s -> ${chunk.endTime.toFixed(1)}s)\n   ========================================================================= */\n\n${p}`;
+    }).join('\n\n\n');
+    const blob = new Blob([allText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_recipe_prompts_${chunks.length}_chunks.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,8 +262,27 @@ Turn any voiceover into motion graphics with instant frame seeking.`);
               Generated Prompts ({chunks.length} Chunks)
             </h3>
             <span className="text-[10px] font-mono text-muted-foreground">
-              Ready to copy to LLM
+              Ready for LLM
             </span>
+          </div>
+
+          {/* Bulk Action Buttons: Copy All & Download All */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyAllPrompts}
+              className="flex-1 h-8 px-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              {copiedAll ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedAll ? 'Copied All!' : 'Copy All Prompts'}</span>
+            </button>
+
+            <button
+              onClick={handleDownloadAllPrompts}
+              className="flex-1 h-8 px-2.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-foreground font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download All (.txt)</span>
+            </button>
           </div>
 
           {chunks.map((chunk) => {
