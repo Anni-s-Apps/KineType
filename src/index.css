@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ── 1. Default Light: Zinc White ──────────────────────────────────── */
+:root,
+.theme-light-zinc {
   --background: #ffffff;
   --foreground: #09090b;
   --card: #ffffff;
@@ -27,7 +29,61 @@
   --sidebar-border: #e2e8f0;
 }
 
-.dark {
+/* ── 2. Soft Light: Warm Amber Cream ──────────────────────────────── */
+.theme-light-amber {
+  --background: #faf8f5;
+  --foreground: #292524;
+  --card: #ffffff;
+  --card-foreground: #292524;
+  --popover: #ffffff;
+  --popover-foreground: #292524;
+  --primary: #d97706;
+  --primary-foreground: #ffffff;
+  --secondary: #f4ece1;
+  --secondary-foreground: #451a03;
+  --muted: #f4ece1;
+  --muted-foreground: #78716c;
+  --accent: #fef3c7;
+  --accent-foreground: #92400e;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e7dfd5;
+  --input: #e7dfd5;
+  --ring: #d97706;
+  --sidebar: #f5efe6;
+  --sidebar-foreground: #292524;
+  --sidebar-border: #e7dfd5;
+}
+
+/* ── 3. Soft Light: Frost Slate ───────────────────────────────────── */
+.theme-light-slate {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0284c7;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e0f2fe;
+  --accent-foreground: #0369a1;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0284c7;
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+}
+
+/* ── 4. Default Dark: Midnight Onyx ───────────────────────────────── */
+.dark,
+.theme-dark-zinc {
   --background: #09090b;
   --foreground: #fafafa;
   --card: #121215;
@@ -42,7 +98,7 @@
   --muted-foreground: #a1a1aa;
   --accent: #27272a;
   --accent-foreground: #fafafa;
-  --destructive: #7f1d1d;
+  --destructive: #ef4444;
   --destructive-foreground: #fafafa;
   --border: #27272a;
   --input: #27272a;
@@ -50,6 +106,32 @@
   --sidebar: #0e0e11;
   --sidebar-foreground: #fafafa;
   --sidebar-border: #27272a;
+}
+
+/* ── 5. Cyber Dark: Cyber Amber ───────────────────────────────────── */
+.theme-dark-amber {
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+  --card: #161412;
+  --card-foreground: #fafaf9;
+  --popover: #161412;
+  --popover-foreground: #fafaf9;
+  --primary: #f59e0b;
+  --primary-foreground: #000000;
+  --secondary: #24201c;
+  --secondary-foreground: #fafaf9;
+  --muted: #24201c;
+  --muted-foreground: #a8a29e;
+  --accent: #451a03;
+  --accent-foreground: #fbbf24;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #292524;
+  --input: #292524;
+  --ring: #f59e0b;
+  --sidebar: #12100e;
+  --sidebar-foreground: #fafaf9;
+  --sidebar-border: #292524;
 }
 
 @layer base {

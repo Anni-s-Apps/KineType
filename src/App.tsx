@@ -12,7 +12,7 @@ import { NewProjectModal } from './components/modals/NewProjectModal';
 
 export const App: React.FC = () => {
   const store = useProjectState();
-  const { theme, toggleTheme } = useTheme();
+  useTheme();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isMediaUploadModalOpen, setIsMediaUploadModalOpen] = useState(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -89,8 +89,6 @@ export const App: React.FC = () => {
             settings: { ...store.recipe.settings, title },
           })
         }
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
 
       {/* ── 2. Main Studio Workspace Layout ─────────────────────────── */}

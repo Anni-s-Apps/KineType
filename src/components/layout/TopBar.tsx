@@ -16,6 +16,7 @@ import {
   Film,
 } from 'lucide-react';
 import { Recipe } from '../../types/recipe';
+import { ThemeSelector } from './ThemeSelector';
 
 interface TopBarProps {
   recipe: Recipe;
@@ -35,8 +36,6 @@ interface TopBarProps {
   onOpenMediaUploadModal: () => void;
   onUpdateAspect: (aspect: '16:9' | '9:16') => void;
   onUpdateTitle: (title: string) => void;
-  theme: 'dark' | 'light' | 'system';
-  onToggleTheme: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -56,8 +55,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenMediaUploadModal,
   onUpdateAspect,
   onUpdateTitle,
-  theme,
-  onToggleTheme,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -242,16 +239,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       </div>
 
-      {/* Right: Theme Toggle & Export */}
+      {/* Right: Theme Selector & Export */}
       <div className="flex items-center gap-2">
-        {/* Dark / Light Mode Toggle */}
-        <button
-          onClick={onToggleTheme}
-          className="h-6 w-6 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors border border-border"
-          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
-        </button>
+        {/* Multi-Theme Selector (3 Light, 2 Dark) */}
+        <ThemeSelector />
 
         {/* Export Button */}
         <button
