@@ -387,37 +387,36 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
           </div>
         )}
 
-        {/* Primary Transcribe Trigger Button with Live Elapsed Seconds */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleStartTranscribe}
-            disabled={isTranscribing || !audioUrl}
-            className={`flex-1 h-9 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
-              !audioUrl
-                ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]'
-            }`}
-          >
-            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isTranscribing ? 'animate-spin' : ''}`} />
-            <span className="truncate">
-              {isTranscribing
-                ? `${progressMsg || 'Transcribing'} (${elapsedSeconds}s)...`
-                : !audioUrl
-                ? 'Upload Audio to Transcribe'
-                : 'Transcribe to Timed SRT'}
-            </span>
-          </button>
+        {/* Primary Transcribe Trigger Button */}
+        <button
+          onClick={handleStartTranscribe}
+          disabled={isTranscribing || !audioUrl}
+          className={`w-full h-9 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
+            !audioUrl
+              ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]'
+          }`}
+        >
+          <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isTranscribing ? 'animate-spin' : ''}`} />
+          <span>
+            {isTranscribing
+              ? `Transcribing (${elapsedSeconds}s)...`
+              : !audioUrl
+              ? 'Upload Audio to Transcribe'
+              : 'Transcribe to Timed SRT'}
+          </span>
+        </button>
 
-          {isTranscribing && (
-            <button
-              onClick={handleCancelTranscribe}
-              className="h-9 px-3 rounded-xl bg-destructive/15 text-destructive hover:bg-destructive/25 border border-destructive/30 font-semibold text-xs transition-colors shrink-0"
-              title="Cancel transcription"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
+        {/* Cancel Button Placed Cleanly Below Main Button */}
+        {isTranscribing && (
+          <button
+            type="button"
+            onClick={handleCancelTranscribe}
+            className="w-full h-7 rounded-lg bg-destructive/10 hover:bg-destructive/20 border border-destructive/25 text-destructive font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors animate-in fade-in"
+          >
+            <span>Stop / Cancel</span>
+          </button>
+        )}
 
         {errorMsg && (
           <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-1.5 animate-in fade-in">
