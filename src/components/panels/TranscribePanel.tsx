@@ -18,6 +18,8 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  FileAudio,
+  Radio,
 } from 'lucide-react';
 import {
   transcribeWithGroq,
@@ -99,49 +101,48 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
     setErrorMsg(null);
 
     if (!audioUrl && !audioBlob && !audioFile) {
-      setErrorMsg('No audio loaded. Please import an audio or video file first.');
+      setErrorMsg('Please import an audio or video file first.');
       return;
     }
 
     if ((engine === 'groq' || engine === 'openai') && !apiKey.trim()) {
-      setErrorMsg(`Please enter your ${engine === 'groq' ? 'Groq' : 'OpenAI'} API key below.`);
+      setErrorMsg(`Please enter your ${engine === 'groq' ? 'Groq' : 'OpenAI'} API key.`);
       return;
     }
 
     try {
       setIsTranscribing(true);
-      setProgressMsg('Preparing audio file & model...');
+      setProgressMsg('Preparing audio file...');
 
       let targetBlob: Blob | File | null = audioBlob || audioFile;
 
-      // If we only have audioUrl, fetch blob
       if (!targetBlob && audioUrl) {
-        setProgressMsg('Fetching audio buffer...');
+        setProgressMsg('Buffering audio stream...');
         const response = await fetch(audioUrl);
         targetBlob = await response.blob();
       }
 
       if (!targetBlob && engine !== 'browser') {
-        throw new Error('Could not access audio data.');
+        throw new Error('Could not access audio stream.');
       }
 
       let res: TranscriptionResult;
 
       if (engine === 'groq') {
-        setProgressMsg('Transcribing with Groq Whisper-large-v3 (~2 seconds)...');
+        setProgressMsg('Whisper-large-v3 (~2s)...');
         res = await transcribeWithGroq(targetBlob!, apiKey);
       } else if (engine === 'openai') {
-        setProgressMsg('Transcribing with OpenAI Whisper-1...');
+        setProgressMsg('Whisper-1 transcribing...');
         res = await transcribeWithOpenAI(targetBlob!, apiKey);
       } else {
-        setProgressMsg('Listening with Browser Speech Recognition...');
+        setProgressMsg('WebSpeech listening...');
         res = await transcribeWithBrowserSpeech(audioUrl!, audioDuration);
       }
 
       setResult(res);
       setProgressMsg('');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Transcription failed. Please check your API key.');
+      setErrorMsg(err.message || 'Transcription failed. Check your API key.');
     } finally {
       setIsTranscribing(false);
     }
@@ -167,7 +168,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-card overflow-y-auto p-4 space-y-4 text-card-foreground [scrollbar-width:none] [&::-webkit-scrollbar]:hidden select-none">
-      {/* ── Hidden Audio Player for Preview ───────────────────────── */}
+      {/* ── Hidden Audio Element for Playback ───────────────────────── */}
       {audioUrl && (
         <audio
           ref={audioPreviewRef}
@@ -179,28 +180,38 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="pb-2 border-b border-border">
-        <h2 className="font-bold text-xs text-foreground flex items-center gap-1.5">
-          <Mic className="w-3.5 h-3.5 text-primary" />
-          AI Audio Transcriber
-        </h2>
-        <p className="text-[11px] text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Mic className="w-3.5 h-3.5" />
+          </div>
+          <h2 className="font-bold text-xs text-foreground tracking-tight">
+            AI Audio Transcriber
+          </h2>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
           Extract word-level timed SRT from imported voiceover / video.
         </p>
       </div>
 
       {/* ── 1. Loaded Audio Source Card ─────────────────────────────── */}
-      <div className="p-3 rounded-xl border border-border bg-background space-y-2.5 shadow-2xs">
+      <div className="p-3 rounded-xl border border-border bg-background/50 space-y-2.5 shadow-2xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              {audioUrl ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />}
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                audioUrl
+                  ? 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {audioUrl ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <span className="text-xs font-semibold text-foreground block truncate">
-                {audioFile ? audioFile.name : audioUrl ? 'Imported Voiceover Audio' : 'No Audio Loaded'}
+                {audioFile ? audioFile.name : audioUrl ? 'Voiceover Audio' : 'No Audio Loaded'}
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono">
-                {audioUrl ? 'Ready for AI transcription' : 'Upload MP3, WAV, or Video'}
+              <span className="text-[10px] text-muted-foreground font-mono block">
+                {audioUrl ? 'Ready to transcribe' : 'MP3, WAV, or Video'}
               </span>
             </div>
           </div>
@@ -208,25 +219,38 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
           {audioUrl && (
             <button
               onClick={handleToggleAudio}
-              className="h-7 px-2.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-foreground font-medium text-xs flex items-center gap-1 transition-colors shrink-0"
+              className={`h-7 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+                isPlayingAudio
+                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                  : 'bg-secondary hover:bg-secondary/80 border-border text-foreground'
+              }`}
             >
-              {isPlayingAudio ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
-              <span>{isPlayingAudio ? 'Stop' : 'Listen'}</span>
+              {isPlayingAudio ? (
+                <>
+                  <Pause className="w-3 h-3 fill-current" />
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Listen</span>
+                </>
+              )}
             </button>
           )}
         </div>
 
         <button
           onClick={onOpenAudioUpload}
-          className="w-full h-8 rounded-lg bg-secondary/70 hover:bg-secondary border border-border text-foreground text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+          className="w-full h-8 rounded-lg bg-secondary/80 hover:bg-secondary border border-border text-foreground text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
         >
-          <Upload className="w-3.5 h-3.5" />
-          <span>{audioUrl ? 'Change Audio / Extract from Video' : 'Import Audio or Video File'}</span>
+          <Upload className="w-3.5 h-3.5 text-muted-foreground" />
+          <span>{audioUrl ? 'Change Audio / Extract' : 'Import Audio or Video'}</span>
         </button>
       </div>
 
       {/* ── 2. Transcription Engine & API Key Setup ─────────────────── */}
-      <div className="space-y-2.5 pt-1 border-t border-border">
+      <div className="space-y-3 pt-1 border-t border-border">
         <div>
           <label className="text-[11px] font-semibold text-foreground block mb-1">
             Transcription Engine
@@ -237,7 +261,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
             options={[
               {
                 value: 'groq',
-                label: 'Groq Whisper-large-v3 (Free & ~2s Instant)',
+                label: 'Groq Whisper-large (Free & Fast)',
               },
               {
                 value: 'openai',
@@ -245,7 +269,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
               },
               {
                 value: 'browser',
-                label: 'In-Browser Speech API (Offline)',
+                label: 'Browser WebSpeech (Offline)',
               },
             ]}
           />
@@ -253,9 +277,9 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
 
         {/* API Key Input for Groq / OpenAI */}
         {engine !== 'browser' && (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+              <label className="text-[11px] font-semibold text-foreground flex items-center gap-1">
                 <Key className="w-3 h-3 text-primary" />
                 {engine === 'groq' ? 'Groq API Key (Free)' : 'OpenAI API Key'}
               </label>
@@ -267,7 +291,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
                   rel="noreferrer"
                   className="text-[10px] text-primary hover:underline flex items-center gap-0.5 font-medium"
                 >
-                  Get Free Key <ExternalLink className="w-2.5 h-2.5" />
+                  Get Key <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               )}
             </div>
@@ -283,7 +307,8 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 text-muted-foreground hover:text-foreground p-0.5"
+                title={showKey ? 'Hide key' : 'Show key'}
               >
                 {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
@@ -295,20 +320,26 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
         <button
           onClick={handleStartTranscribe}
           disabled={isTranscribing || !audioUrl}
-          className="w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
+          className={`w-full h-9 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
+            !audioUrl
+              ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]'
+          }`}
         >
-          <Sparkles className={`w-4 h-4 ${isTranscribing ? 'animate-spin' : ''}`} />
-          <span>
+          <Sparkles className={`w-3.5 h-3.5 shrink-0 ${isTranscribing ? 'animate-spin' : ''}`} />
+          <span className="truncate">
             {isTranscribing
-              ? progressMsg || 'Transcribing Audio...'
-              : '⚡ Transcribe Audio into Timed SRT'}
+              ? progressMsg || 'Transcribing...'
+              : !audioUrl
+              ? 'Upload Audio to Transcribe'
+              : 'Transcribe to Timed SRT'}
           </span>
         </button>
 
         {errorMsg && (
-          <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-1.5 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span className="leading-tight">{errorMsg}</span>
+          <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-1.5 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span className="leading-tight text-[11px]">{errorMsg}</span>
           </div>
         )}
       </div>
@@ -318,12 +349,12 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
         <div className="space-y-3 pt-2 border-t border-border animate-in fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
               <h3 className="text-xs font-bold text-foreground">
-                Timed Transcript ({result.cues.length} Cues)
+                Transcript ({result.cues.length} Cues)
               </h3>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded-md border border-border">
+            <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded-md border border-border capitalize">
               {result.engine}
             </span>
           </div>
@@ -356,16 +387,16 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
           {activeTab === 'srt' ? (
             <textarea
               readOnly
-              rows={8}
+              rows={7}
               value={result.srtContent}
               className="w-full bg-background border border-border rounded-xl p-3 font-mono text-xs text-foreground outline-none resize-none shadow-2xs leading-relaxed select-text [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             />
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {result.cues.map((cue) => (
                 <div
                   key={cue.id}
-                  className="p-2.5 rounded-xl border border-border bg-background space-y-1 shadow-2xs"
+                  className="p-2.5 rounded-xl border border-border bg-background/60 space-y-1 shadow-2xs"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[10px] font-bold text-primary">
@@ -389,8 +420,8 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
               onClick={() => onSendToPromptBuilder(result.srtContent)}
               className="w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Send Transcript to Prompt Builder</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Send to Prompt Builder</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
@@ -400,7 +431,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
                 className="flex-1 h-8 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-foreground font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied SRT!' : 'Copy SRT'}</span>
+                <span>{copied ? 'Copied' : 'Copy SRT'}</span>
               </button>
 
               <button
@@ -408,7 +439,7 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
                 className="flex-1 h-8 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-foreground font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Download .srt</span>
+                <span>Download</span>
               </button>
             </div>
           </div>
@@ -417,3 +448,4 @@ export const TranscribePanel: React.FC<TranscribePanelProps> = ({
     </div>
   );
 };
+
