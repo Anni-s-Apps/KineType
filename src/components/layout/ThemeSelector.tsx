@@ -30,7 +30,7 @@ export const ThemeSelector: React.FC = () => {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="h-6.5 px-2 rounded-md hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1.5 border border-border transition-colors select-none"
+        className="h-7 px-2.5 rounded-md hover:bg-muted text-xs font-medium text-foreground flex items-center gap-1.5 border border-border transition-colors select-none shrink-0 whitespace-nowrap"
         title="Change Theme Palette"
       >
         <span
@@ -38,7 +38,7 @@ export const ThemeSelector: React.FC = () => {
           style={{ backgroundColor: activeTheme.colorPreview }}
         />
         <span className="truncate max-w-[85px]">{activeTheme.name}</span>
-        <ChevronDown className="w-3 h-3 text-muted-foreground opacity-60" />
+        <ChevronDown className="w-3 h-3 text-muted-foreground opacity-60 shrink-0" />
       </button>
 
       {/* Dropdown Popover */}

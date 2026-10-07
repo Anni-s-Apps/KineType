@@ -282,12 +282,12 @@ export const Timeline: React.FC<TimelineProps> = ({
       />
 
       {/* ── Timeline Control Toolbar ───────────────────────────────── */}
-      <div className="h-9 px-3 bg-card border-b border-border flex items-center justify-between text-xs shrink-0">
+      <div className="h-10 px-3 bg-card border-b border-border flex items-center justify-between gap-3 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* Left: Playhead Controls & Time Counter */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => onSeek(0)}
-            className="h-7 w-7 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+            className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0"
             title="Stop / Reset to Start"
           >
             <StopIcon className="w-3.5 h-3.5" />
@@ -295,7 +295,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           <button
             onClick={() => stepFrame(-1)}
-            className="h-7 w-7 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+            className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0"
             title="Step Back 1 Frame"
           >
             <SkipBack className="w-3.5 h-3.5" />
@@ -303,7 +303,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           <button
             onClick={onTogglePlay}
-            className="h-7 px-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 font-medium transition-colors shadow-xs"
+            className="h-7 px-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 font-medium transition-colors shadow-xs shrink-0 whitespace-nowrap"
             title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
           >
             {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -312,40 +312,40 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           <button
             onClick={() => stepFrame(1)}
-            className="h-7 w-7 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+            className="h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0"
             title="Step Forward 1 Frame"
           >
             <SkipForward className="w-3.5 h-3.5" />
           </button>
 
-          <div className="font-mono text-xs font-medium ml-2 px-2 py-0.5 rounded bg-muted/60 border border-border">
+          <div className="h-7 px-2.5 rounded-md bg-muted/60 border border-border flex items-center font-mono text-xs font-medium ml-1 shrink-0 whitespace-nowrap">
             <span className="text-foreground">{formatTime(currentTime)}</span>
-            <span className="text-muted-foreground"> / {formatTime(duration)}</span>
+            <span className="text-muted-foreground">&nbsp;/ {formatTime(duration)}</span>
           </div>
         </div>
 
-        {/* Center: Selected Layer Actions */}
-        <div className="flex items-center gap-1.5">
+        {/* Center: Selected Layer Actions & Add Layer */}
+        <div className="flex items-center gap-2 shrink-0">
           {selectedLayerId && (
-            <div className="flex items-center gap-1 bg-secondary px-2 py-0.5 rounded border border-border text-[11px]">
+            <div className="h-7 px-2 rounded-md bg-secondary border border-border flex items-center gap-1.5 text-xs shrink-0 whitespace-nowrap">
               <span className="text-muted-foreground font-mono">#{selectedLayerId}</span>
-              <div className="h-3 w-px bg-border mx-1" />
+              <div className="h-3.5 w-px bg-border mx-0.5" />
               <button
                 onClick={() => onDuplicateLayer(selectedLayerId)}
-                className="hover:text-foreground text-muted-foreground flex items-center gap-1"
-                title="Duplicate"
+                className="h-5 px-1.5 rounded hover:bg-background/80 hover:text-foreground text-muted-foreground flex items-center gap-1 transition-colors"
+                title="Duplicate Layer"
               >
                 <Copy className="w-3 h-3" />
-                Duplicate
+                <span className="hidden sm:inline">Duplicate</span>
               </button>
-              <div className="h-3 w-px bg-border mx-1" />
+              <div className="h-3.5 w-px bg-border mx-0.5" />
               <button
                 onClick={() => onRemoveLayer(selectedLayerId)}
-                className="hover:text-destructive text-muted-foreground flex items-center gap-1"
-                title="Delete"
+                className="h-5 px-1.5 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground flex items-center gap-1 transition-colors"
+                title="Delete Layer"
               >
                 <Trash2 className="w-3 h-3" />
-                Delete
+                <span className="hidden sm:inline">Delete</span>
               </button>
             </div>
           )}
@@ -369,39 +369,40 @@ export const Timeline: React.FC<TimelineProps> = ({
                 z: layers.length + 1,
               })
             }
-            className="h-6.5 px-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[11px] font-medium flex items-center gap-1 border border-border"
+            className="h-7 px-2.5 rounded-md bg-secondary/70 hover:bg-secondary text-foreground text-xs font-medium flex items-center gap-1.5 border border-border transition-colors shrink-0 whitespace-nowrap shadow-2xs"
           >
-            <Plus className="w-3 h-3" /> Add Layer
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Layer</span>
           </button>
         </div>
 
         {/* Right: Snap to Grid & Zoom Slider */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={() => setSnapToGrid(!snapToGrid)}
-            className={`h-6.5 px-2 rounded text-[11px] font-medium border transition-colors flex items-center gap-1 ${
+            className={`h-7 px-2.5 rounded-md text-xs font-medium border transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               snapToGrid
-                ? 'bg-secondary text-foreground border-border'
-                : 'text-muted-foreground border-transparent hover:bg-muted'
+                ? 'bg-secondary text-foreground border-border font-semibold shadow-2xs'
+                : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'
             }`}
             title="Toggle Snap to 0.1s Grid"
           >
-            <Grid className="w-3 h-3" />
-            Snap
+            <Grid className="w-3.5 h-3.5" />
+            <span>Snap</span>
           </button>
 
-          <div className="flex items-center gap-1.5">
-            <ZoomOut className="w-3 h-3 text-muted-foreground" />
+          <div className="h-7 px-2 rounded-md bg-muted/40 border border-border flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <ZoomOut className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <input
               type="range"
               min={30}
               max={160}
               value={pxPerSec}
               onChange={(e) => setPxPerSec(parseInt(e.target.value))}
-              className="w-20 h-1 bg-muted rounded appearance-none cursor-pointer accent-primary"
+              className="w-16 sm:w-20 h-1 bg-muted rounded appearance-none cursor-pointer accent-primary"
             />
-            <ZoomIn className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] font-mono text-muted-foreground w-7 text-right">
+            <ZoomIn className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="text-[10px] font-mono text-muted-foreground w-7 text-right shrink-0">
               {Math.round((pxPerSec / 65) * 100)}%
             </span>
           </div>
