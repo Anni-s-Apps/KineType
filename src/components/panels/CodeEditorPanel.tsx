@@ -91,13 +91,13 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({
           value={recipeJsonText}
           onChange={(e) => onChangeJsonText(e.target.value)}
           spellCheck={false}
-          className="flex-1 w-full h-full p-3 font-mono text-xs text-foreground bg-transparent resize-none outline-none leading-relaxed select-text"
+          className="flex-1 w-full h-full p-3 font-mono text-xs text-foreground bg-transparent resize-none outline-none leading-relaxed select-text [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           placeholder="Paste recipe JSON here..."
         />
       </div>
 
       {/* Live Validation Banner */}
-      <div className="border-t border-border bg-card p-3 space-y-2 max-h-44 overflow-y-auto">
+      <div className="border-t border-border bg-card p-3 space-y-2 max-h-44 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium text-foreground flex items-center gap-1.5">
             {validation.valid ? (

@@ -94,7 +94,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
       </div>
 
       {/* Layers List */}
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {layers.length === 0 ? (
           <div className="text-center py-10 text-xs text-muted-foreground">No layers in recipe.</div>
         ) : (

@@ -64,7 +64,7 @@ export const AssetsPanel: React.FC<AssetsPanelProps> = ({
       </div>
 
       {/* Assets Slot List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {assets.length === 0 ? (
           <div className="text-center py-10 px-4 border border-dashed border-border rounded-lg bg-muted/20">
             <Sparkles className="w-6 h-6 text-muted-foreground mx-auto mb-2 opacity-50" />

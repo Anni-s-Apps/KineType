@@ -33,7 +33,7 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-card border-r border-border overflow-y-auto p-4 space-y-3.5 text-card-foreground">
+    <div className="flex-1 flex flex-col h-full bg-card border-r border-border overflow-y-auto p-4 space-y-3.5 text-card-foreground [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div>
         <h2 className="font-semibold text-xs text-foreground flex items-center gap-1.5">
           <Tv className="w-3.5 h-3.5 text-primary" />

@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   RotateCw,
-  Move,
-  Maximize2,
+  RotateCcw,
   AlignCenter,
   AlignVerticalSpaceAround,
+  AlignLeft,
+  AlignRight,
   Copy,
   Trash2,
-  Sparkles,
-  Type,
-  Image as ImageIcon,
-  Square,
-  CreditCard,
+  Maximize2,
+  Minus,
+  Plus,
   X,
   Check,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { RecipeLayer, TextLayer, ImageLayer, ShapeLayer, CardLayer } from '../../types/recipe';
 import { resolveSize } from '../../render/renderer';
@@ -53,7 +54,6 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
   onUpdateLayer,
   onDuplicateLayer,
   onRemoveLayer,
-  onSelectLayer,
 }) => {
   const [dragMode, setDragMode] = useState<DragMode | null>(null);
   const [isEditingTextInline, setIsEditingTextInline] = useState(false);
@@ -100,7 +100,6 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
     const fontSize = resolveSize(textLayer.size || 52, shortSide, 48);
     const lines = (textLayer.text || '').split('\n');
     const maxLineLen = Math.max(1, ...lines.map((l) => l.length));
-    // Estimate width from character count and font size
     unscaledW = Math.max(80, maxLineLen * fontSize * 0.58 + 24);
     unscaledH = Math.max(40, lines.length * fontSize * 1.3 + 16);
   } else if (layer.type === 'image') {
@@ -127,6 +126,10 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
   // Box center position in screen display pixels
   const posX = (layer.x ?? 0.5) * displayW;
   const posY = (layer.y ?? 0.5) * displayH;
+
+  // Toolbar vertical position: place above rotation handle, or flip below if near top
+  const isNearTop = posY - boxH / 2 < 70;
+  const toolbarTop = isNearTop ? posY + boxH / 2 + 20 : posY - boxH / 2 - 62;
 
   // ── Handle Mouse Down for Dragging / Resizing / Rotating ──────────────────
   const handleStartDrag = (e: React.MouseEvent, mode: DragMode) => {
@@ -169,11 +172,9 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
       const deltaY = e.clientY - start.clientY;
 
       if (dragMode === 'move') {
-        // Translation in normalized coords (0..1)
         let newX = start.layerX + deltaX / displayW;
         let newY = start.layerY + deltaY / displayH;
 
-        // Smart guides snapping to Center (0.5)
         const snapThresholdX = 0.015;
         const snapThresholdY = 0.015;
 
@@ -191,27 +192,23 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
           setShowGuideY(false);
         }
 
-        // Clamp to screen bounds with padding
-        newX = Math.max(0.02, Math.min(0.98, newX));
-        newY = Math.max(0.02, Math.min(0.98, newY));
+        newX = Math.max(0.01, Math.min(0.99, newX));
+        newY = Math.max(0.01, Math.min(0.99, newY));
 
         onUpdateLayer(layer.id, {
           x: Math.round(newX * 1000) / 1000,
           y: Math.round(newY * 1000) / 1000,
         });
       } else if (dragMode === 'rotate') {
-        // Calculate angle from layer center to current mouse
         const angleRad = Math.atan2(
           e.clientY - start.centerScreenY,
           e.clientX - start.centerScreenX
         );
         let angleDeg = Math.round(angleRad * (180 / Math.PI) + 90);
 
-        // Normalize to 0..360
         if (angleDeg < 0) angleDeg += 360;
         if (angleDeg >= 360) angleDeg -= 360;
 
-        // Snapping: Snap to 0, 45, 90, 135, 180, 225, 270, 315 within 4 degrees
         const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
         for (const snap of snapAngles) {
           if (Math.abs(angleDeg - snap) <= 4) {
@@ -228,7 +225,6 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
         dragMode === 'resize-se' ||
         dragMode === 'resize-sw'
       ) {
-        // Uniform Proportional Scale
         let scaleFactor = 1;
         const currentDist = Math.hypot(
           e.clientX - start.centerScreenX,
@@ -248,7 +244,6 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
 
         onUpdateLayer(layer.id, { scale: newScale });
       } else if (dragMode === 'resize-e' || dragMode === 'resize-w') {
-        // Horizontal width resizing
         const mult = dragMode === 'resize-e' ? 1 : -1;
         const widthDeltaDisplay = deltaX * 2 * mult;
         const widthDeltaCanvas = widthDeltaDisplay / scale;
@@ -258,13 +253,11 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
           const newW = Math.max(20, Math.round(currentW));
           onUpdateLayer(layer.id, { w: newW } as any);
         } else if (layer.type === 'text') {
-          // Scale font size proportionally
           const scaleFactor = Math.max(0.2, (start.boxW + widthDeltaDisplay) / start.boxW);
-          const newSize = Math.max(12, Math.round(((start.layerSize || 52) * scaleFactor)));
+          const newSize = Math.max(12, Math.round((start.layerSize || 52) * scaleFactor));
           onUpdateLayer(layer.id, { size: newSize } as any);
         }
       } else if (dragMode === 'resize-s' || dragMode === 'resize-n') {
-        // Vertical height resizing
         const mult = dragMode === 'resize-s' ? 1 : -1;
         const heightDeltaDisplay = deltaY * 2 * mult;
         const heightDeltaCanvas = heightDeltaDisplay / scale;
@@ -311,20 +304,20 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
       {/* ── Smart Center Alignment Guide Lines ─────────────────────── */}
       {showGuideX && (
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-red-500/80 pointer-events-none z-40 shadow-sm animate-pulse"
+          className="absolute top-0 bottom-0 w-px bg-red-500 pointer-events-none z-40 shadow-sm"
           style={{ left: `${displayW * 0.5}px` }}
         >
-          <span className="absolute top-2 -left-6 px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-mono font-bold">
+          <span className="absolute top-2 -left-6 px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-mono font-bold shadow-xs">
             X: 50%
           </span>
         </div>
       )}
       {showGuideY && (
         <div
-          className="absolute left-0 right-0 h-0.5 bg-red-500/80 pointer-events-none z-40 shadow-sm animate-pulse"
+          className="absolute left-0 right-0 h-px bg-red-500 pointer-events-none z-40 shadow-sm"
           style={{ top: `${displayH * 0.5}px` }}
         >
-          <span className="absolute left-2 -top-5 px-1 py-0.5 rounded bg-red-600 text-white text-[9px] font-mono font-bold">
+          <span className="absolute left-2 -top-5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-mono font-bold shadow-xs">
             Y: 50%
           </span>
         </div>
@@ -346,97 +339,85 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
         {/* Bounding Box Border */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'move')}
-          className={`absolute inset-0 border-2 rounded-sm cursor-move transition-colors ${
-            dragMode === 'move'
-              ? 'border-primary bg-primary/10 shadow-lg'
-              : 'border-primary/90 hover:border-primary hover:bg-primary/5 shadow-md'
+          className={`absolute inset-0 border border-primary rounded-[2px] cursor-move transition-colors ${
+            dragMode === 'move' ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-primary/5'
           }`}
-          title="Drag to reposition layer (Double-click to edit)"
-        >
-          {/* Subtle diagonal stripe pattern when hovering/dragging */}
-          <div className="w-full h-full opacity-20 pointer-events-none" />
-        </div>
+          title="Drag to move (Double-click text to edit)"
+        />
 
-        {/* ── Rotation Knob & Stem (Top Center) ────────────────────── */}
-        <div className="absolute left-1/2 -top-7 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
-          {/* Rotation Handle Knob */}
+        {/* ── Rotation Handle & Stem (Top Center) ──────────────────── */}
+        <div className="absolute left-1/2 -top-6 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
+          {/* Knob */}
           <div
             onMouseDown={(e) => handleStartDrag(e, 'rotate')}
-            className="w-5 h-5 rounded-full bg-background border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md transition-transform hover:scale-125 group"
-            title="Drag around center to rotate"
+            className="w-4 h-4 rounded-full bg-background border-2 border-primary text-primary flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm hover:scale-125 transition-transform"
+            title="Drag around center to rotate layer"
           >
-            <RotateCw className="w-3 h-3 group-hover:rotate-45 transition-transform" />
+            <RotateCw className="w-2.5 h-2.5" />
           </div>
-          {/* Stem Line connecting to bounding box top */}
-          <div className="w-0.5 h-2 bg-primary" />
+          {/* Stem connecting to box */}
+          <div className="w-px h-2 bg-primary" />
         </div>
 
-        {/* Floating Rotation Angle Tooltip Badge while rotating */}
+        {/* Rotation Angle Badge while rotating */}
         {dragMode === 'rotate' && (
           <div
-            className="absolute left-1/2 -top-14 -translate-x-1/2 px-2 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-[11px] font-bold shadow-xl whitespace-nowrap z-50 animate-in zoom-in-95"
+            className="absolute left-1/2 -top-12 -translate-x-1/2 px-2 py-0.5 rounded bg-primary text-primary-foreground font-mono text-[10px] font-bold shadow-lg whitespace-nowrap z-50 animate-in zoom-in-95"
             style={{ transform: `rotate(${-layerRotation}deg)` }}
           >
             {layerRotation}°
           </div>
         )}
 
-        {/* ── 4 Corner Resize Handles ──────────────────────────────── */}
-        {/* Top-Left (NW) */}
+        {/* ── 4 Corner Handles (NW, NE, SE, SW) ────────────────────── */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-nw')}
-          className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 rounded-xs bg-background border-2 border-primary shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-          title="Scale layer"
+          className="absolute -top-1 -left-1 w-2.5 h-2.5 rounded-[1px] bg-background border border-primary shadow-2xs cursor-nwse-resize hover:scale-125 transition-transform"
+          title="Scale"
         />
-        {/* Top-Right (NE) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-ne')}
-          className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-xs bg-background border-2 border-primary shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-          title="Scale layer"
+          className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-[1px] bg-background border border-primary shadow-2xs cursor-nesw-resize hover:scale-125 transition-transform"
+          title="Scale"
         />
-        {/* Bottom-Right (SE) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-se')}
-          className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 rounded-xs bg-background border-2 border-primary shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-          title="Scale layer"
+          className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-[1px] bg-background border border-primary shadow-2xs cursor-nwse-resize hover:scale-125 transition-transform"
+          title="Scale"
         />
-        {/* Bottom-Left (SW) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-sw')}
-          className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 rounded-xs bg-background border-2 border-primary shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-          title="Scale layer"
+          className="absolute -bottom-1 -left-1 w-2.5 h-2.5 rounded-[1px] bg-background border border-primary shadow-2xs cursor-nesw-resize hover:scale-125 transition-transform"
+          title="Scale"
         />
 
-        {/* ── 4 Edge Resize Handles ────────────────────────────────── */}
-        {/* Top (N) */}
+        {/* ── 4 Edge Handles (N, S, E, W) ──────────────────────────── */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-n')}
-          className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-2 rounded-xs bg-background border border-primary shadow-2xs cursor-ns-resize hover:scale-110 transition-transform"
+          className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-3 h-1 rounded-full bg-background border border-primary shadow-2xs cursor-ns-resize hover:scale-110"
           title="Resize height"
         />
-        {/* Bottom (S) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-s')}
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 rounded-xs bg-background border border-primary shadow-2xs cursor-ns-resize hover:scale-110 transition-transform"
+          className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-3 h-1 rounded-full bg-background border border-primary shadow-2xs cursor-ns-resize hover:scale-110"
           title="Resize height"
         />
-        {/* Left (W) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-w')}
-          className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-4 rounded-xs bg-background border border-primary shadow-2xs cursor-ew-resize hover:scale-110 transition-transform"
+          className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-background border border-primary shadow-2xs cursor-ew-resize hover:scale-110"
           title="Resize width"
         />
-        {/* Right (E) */}
         <div
           onMouseDown={(e) => handleStartDrag(e, 'resize-e')}
-          className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-4 rounded-xs bg-background border border-primary shadow-2xs cursor-ew-resize hover:scale-110 transition-transform"
+          className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-background border border-primary shadow-2xs cursor-ew-resize hover:scale-110"
           title="Resize width"
         />
 
         {/* ── Inline Text Editor Overlay on Double-Click ────────────── */}
         {isEditingTextInline && layer.type === 'text' && (
           <div
-            className="absolute inset-0 z-50 bg-background/95 border-2 border-primary rounded p-1 shadow-2xl flex flex-col justify-between"
+            className="absolute inset-0 z-50 bg-background border border-primary rounded p-1.5 shadow-2xl flex flex-col justify-between"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <textarea
@@ -448,112 +429,187 @@ export const TransformGizmo: React.FC<TransformGizmoProps> = ({
                   handleSaveInlineText();
                 }
               }}
-              className="w-full h-full resize-none text-xs bg-transparent text-foreground outline-none p-1 font-medium"
+              className="w-full h-full resize-none text-xs bg-transparent text-foreground outline-none font-medium"
               autoFocus
             />
             <div className="flex items-center justify-end gap-1 mt-1 pt-1 border-t border-border">
               <button
                 onClick={() => setIsEditingTextInline(false)}
-                className="p-1 rounded hover:bg-muted text-muted-foreground"
+                className="px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground text-[10px]"
                 title="Cancel"
               >
-                <X className="w-3 h-3" />
+                Cancel
               </button>
               <button
                 onClick={handleSaveInlineText}
-                className="p-1 rounded bg-primary text-primary-foreground"
+                className="px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium"
                 title="Save Text (Enter)"
               >
-                <Check className="w-3 h-3" />
+                Done
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Floating Quick Action Toolbar over Selected Layer ────────── */}
+      {/* ── Floating Real-Editor Action Toolbar ─────────────────────── */}
       <div
         className="absolute z-40 pointer-events-auto select-none transition-all duration-75"
         style={{
           left: `${posX}px`,
-          top: `${Math.max(20, posY - boxH / 2 - 42)}px`,
+          top: `${Math.max(10, toolbarTop)}px`,
           transform: 'translateX(-50%)',
         }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-1 bg-card/95 backdrop-blur-md px-2 py-1 rounded-lg border border-border shadow-xl text-xs text-card-foreground">
+        <div className="flex items-center gap-1 bg-card text-card-foreground px-2.5 py-1.5 rounded-xl border border-border shadow-2xl text-xs font-medium whitespace-nowrap">
           {/* Layer ID Badge */}
-          <span className="font-mono text-[10px] text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/60">
+          <span className="font-mono text-[10px] text-primary font-bold px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
             #{layer.id}
           </span>
 
-          <div className="h-3.5 w-px bg-border mx-0.5" />
+          <div className="h-4 w-px bg-border mx-1" />
 
-          {/* Quick Align Center X */}
-          <button
-            onClick={() => onUpdateLayer(layer.id, { x: 0.5 })}
-            className="h-6 px-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-            title="Align Center Horizontally"
-          >
-            <AlignCenter className="w-3 h-3" />
-            <span className="text-[10px] hidden sm:inline">Center X</span>
-          </button>
+          {/* Alignment Controls */}
+          <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+            <button
+              onClick={() => onUpdateLayer(layer.id, { x: 0.5 })}
+              className="h-6 px-2 rounded-md hover:bg-card text-foreground flex items-center gap-1 transition-colors text-[11px] font-medium"
+              title="Align Center Horizontally (50%)"
+            >
+              <AlignCenter className="w-3.5 h-3.5 text-primary" />
+              <span>Center X</span>
+            </button>
 
-          {/* Quick Align Center Y */}
-          <button
-            onClick={() => onUpdateLayer(layer.id, { y: 0.5 })}
-            className="h-6 px-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-            title="Align Center Vertically"
-          >
-            <AlignVerticalSpaceAround className="w-3 h-3" />
-            <span className="text-[10px] hidden sm:inline">Center Y</span>
-          </button>
+            <button
+              onClick={() => onUpdateLayer(layer.id, { y: 0.5 })}
+              className="h-6 px-2 rounded-md hover:bg-card text-foreground flex items-center gap-1 transition-colors text-[11px] font-medium"
+              title="Align Center Vertically (50%)"
+            >
+              <AlignVerticalSpaceAround className="w-3.5 h-3.5 text-primary" />
+              <span>Center Y</span>
+            </button>
+          </div>
 
-          {/* Reset Rotation if rotated */}
-          {(layer.rotation ?? 0) !== 0 && (
+          <div className="h-4 w-px bg-border mx-1" />
+
+          {/* Rotation Controls: Quick Rotate -15°, +15°, and 90° Turn */}
+          <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+            <button
+              onClick={() => {
+                const currentRot = layer.rotation || 0;
+                let newRot = (currentRot - 15 + 360) % 360;
+                onUpdateLayer(layer.id, { rotation: newRot });
+              }}
+              className="h-6 w-6 rounded-md hover:bg-card text-foreground flex items-center justify-center transition-colors"
+              title="Rotate Left 15°"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Rotation Angle Chip / Reset */}
             <button
               onClick={() => onUpdateLayer(layer.id, { rotation: 0 })}
-              className="h-6 px-1.5 rounded hover:bg-muted text-amber-500 hover:text-amber-400 font-mono text-[10px] font-semibold flex items-center gap-0.5 transition-colors"
-              title="Reset Rotation to 0°"
+              className={`h-6 px-1.5 rounded-md font-mono text-[10px] font-bold flex items-center gap-1 transition-colors ${
+                (layer.rotation || 0) !== 0
+                  ? 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+                  : 'text-muted-foreground hover:bg-card'
+              }`}
+              title="Click to reset rotation to 0°"
             >
-              <RotateCw className="w-2.5 h-2.5" />
-              {layer.rotation}°
+              <RotateCw className="w-3 h-3" />
+              <span>{layer.rotation || 0}°</span>
             </button>
-          )}
 
-          {/* Scale Badge / Reset if scaled */}
-          {(layer.scale ?? 1) !== 1 && (
+            <button
+              onClick={() => {
+                const currentRot = layer.rotation || 0;
+                let newRot = (currentRot + 15) % 360;
+                onUpdateLayer(layer.id, { rotation: newRot });
+              }}
+              className="h-6 w-6 rounded-md hover:bg-card text-foreground flex items-center justify-center transition-colors"
+              title="Rotate Right 15°"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => {
+                const currentRot = layer.rotation || 0;
+                let newRot = (currentRot + 90) % 360;
+                onUpdateLayer(layer.id, { rotation: newRot });
+              }}
+              className="h-6 px-1.5 rounded-md hover:bg-card text-foreground text-[10px] font-semibold transition-colors"
+              title="Rotate 90°"
+            >
+              +90°
+            </button>
+          </div>
+
+          <div className="h-4 w-px bg-border mx-1" />
+
+          {/* Scale Stepper Controls */}
+          <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+            <button
+              onClick={() => {
+                const cur = layer.scale ?? 1;
+                const newScale = Math.max(0.2, Math.round((cur - 0.1) * 10) / 10);
+                onUpdateLayer(layer.id, { scale: newScale });
+              }}
+              className="h-6 w-6 rounded-md hover:bg-card text-foreground flex items-center justify-center transition-colors"
+              title="Scale Down (-10%)"
+            >
+              <Minus className="w-3 h-3" />
+            </button>
+
             <button
               onClick={() => onUpdateLayer(layer.id, { scale: 1 })}
-              className="h-6 px-1.5 rounded hover:bg-muted text-primary font-mono text-[10px] font-semibold flex items-center gap-0.5 transition-colors"
-              title="Reset Scale to 100%"
+              className={`h-6 px-1.5 rounded-md font-mono text-[10px] font-bold flex items-center gap-1 transition-colors ${
+                (layer.scale ?? 1) !== 1
+                  ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                  : 'text-muted-foreground hover:bg-card'
+              }`}
+              title="Click to reset scale to 100%"
             >
-              <Maximize2 className="w-2.5 h-2.5" />
-              {Math.round((layer.scale ?? 1) * 100)}%
+              <Maximize2 className="w-3 h-3" />
+              <span>{Math.round((layer.scale ?? 1) * 100)}%</span>
             </button>
-          )}
 
-          <div className="h-3.5 w-px bg-border mx-0.5" />
+            <button
+              onClick={() => {
+                const cur = layer.scale ?? 1;
+                const newScale = Math.min(3.0, Math.round((cur + 0.1) * 10) / 10);
+                onUpdateLayer(layer.id, { scale: newScale });
+              }}
+              className="h-6 w-6 rounded-md hover:bg-card text-foreground flex items-center justify-center transition-colors"
+              title="Scale Up (+10%)"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
 
-          {/* Duplicate Layer */}
+          <div className="h-4 w-px bg-border mx-1" />
+
+          {/* Duplicate & Delete Action Buttons */}
           {onDuplicateLayer && (
             <button
               onClick={() => onDuplicateLayer(layer.id)}
-              className="h-6 w-6 rounded hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+              className="h-7 w-7 rounded-lg hover:bg-muted text-foreground flex items-center justify-center transition-colors"
               title="Duplicate Layer"
             >
-              <Copy className="w-3 h-3" />
+              <Copy className="w-3.5 h-3.5" />
             </button>
           )}
 
-          {/* Delete Layer */}
           {onRemoveLayer && (
             <button
               onClick={() => onRemoveLayer(layer.id)}
-              className="h-6 w-6 rounded hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors"
+              className="h-7 w-7 rounded-lg hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors"
               title="Delete Layer"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

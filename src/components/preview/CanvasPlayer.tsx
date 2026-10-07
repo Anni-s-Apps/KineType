@@ -116,9 +116,14 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
 
   const selectedLayer = visibleLayers.find((l) => l.id === selectedLayerId);
 
-  // Hit testing when clicking on the canvas
+  // Hit testing when clicking directly on the canvas surface
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isPlaying) return;
+    // If click was on a button, gizmo handle, or anything other than canvas/container, do not deselect
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.pointer-events-auto')) {
+      return;
+    }
 
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = (e.clientX - rect.left) / displayW; // 0..1
