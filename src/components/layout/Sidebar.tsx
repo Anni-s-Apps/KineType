@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   FileVideo,
   Music,
@@ -58,6 +58,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey | null>('assets');
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(270);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+
+  const resizeStartXRef = useRef<number>(0);
+  const resizeStartWidthRef = useRef<number>(270);
 
   const assets = recipe.assets || [];
   const layers = recipe.layers || [];
@@ -72,10 +77,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  // Resizable sidebar width handlers (min: 220px, max: 420px)
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartXRef.current = e.clientX;
+    resizeStartWidthRef.current = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const deltaX = e.clientX - resizeStartXRef.current;
+      const newWidth = Math.max(220, Math.min(420, resizeStartWidthRef.current + deltaX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
+
   return (
-    <aside className="flex h-full min-h-0 bg-card border-r border-border shrink-0 select-none z-20 text-card-foreground">
+    <aside className="flex h-full min-h-0 bg-card border-r border-border shrink-0 select-none z-20 text-card-foreground relative">
       {/* ── Leftmost Icon Tool Strip (w-12) ────────────────────────── */}
-      <div className="w-12 h-full flex flex-col items-center py-2.5 bg-card border-r border-border shrink-0 gap-1.5">
+      <div className="w-12 h-full flex flex-col items-center py-3 bg-card border-r border-border shrink-0 gap-2.5">
         {/* New Project */}
         <button
           onClick={onOpenNewProject}
@@ -90,30 +131,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onOpenAudioUpload}
           className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors relative ${
             audioUrl
-              ? 'bg-secondary text-foreground font-semibold'
+              ? 'bg-secondary text-foreground font-semibold border border-border'
               : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title={audioFile ? `Audio: ${audioFile.name}` : 'Import Audio or Video'}
         >
           <Music className="w-4 h-4" />
-          {audioUrl && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+          {audioUrl && (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-card" />
+          )}
         </button>
 
-        <div className="w-6 h-px bg-border my-1" />
+        <div className="w-6 h-px bg-border my-0.5" />
 
         {/* Assets Tab */}
         <button
           onClick={() => handleTabClick('assets')}
           className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors relative ${
             isExpanded && activeTab === 'assets'
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-xs'
               : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title="Asset Slots"
         >
           <ImageIcon className="w-4 h-4" />
           {assets.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 px-1 py-0.2 rounded-full bg-muted text-[8px] font-mono border border-border">
+            <span
+              className={`absolute -top-1 -right-1 px-1 min-w-[14px] h-[14px] rounded-full text-[8px] font-mono font-bold flex items-center justify-center shadow-xs ring-1 ring-card ${
+                isExpanded && activeTab === 'assets'
+                  ? 'bg-card text-foreground border border-border'
+                  : 'bg-secondary text-secondary-foreground border border-border'
+              }`}
+            >
               {importedCount}/{assets.length}
             </span>
           )}
@@ -124,14 +173,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => handleTabClick('layers')}
           className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors relative ${
             isExpanded && activeTab === 'layers'
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-xs'
               : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title="Layers"
         >
           <Sliders className="w-4 h-4" />
           {layers.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 px-1 py-0.2 rounded-full bg-muted text-[8px] font-mono border border-border">
+            <span
+              className={`absolute -top-1 -right-1 px-1 min-w-[14px] h-[14px] rounded-full text-[8px] font-mono font-bold flex items-center justify-center shadow-xs ring-1 ring-card ${
+                isExpanded && activeTab === 'layers'
+                  ? 'bg-card text-foreground border border-border'
+                  : 'bg-secondary text-secondary-foreground border border-border'
+              }`}
+            >
               {layers.length}
             </span>
           )}
@@ -142,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => handleTabClick('prompt-builder')}
           className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
             isExpanded && activeTab === 'prompt-builder'
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-xs'
               : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title="Prompt Builder & SRT Chunker"
@@ -155,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => handleTabClick('templates')}
           className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
             isExpanded && activeTab === 'templates'
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-xs'
               : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title="Templates"
@@ -175,9 +230,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* ── Expandable Content Area (w-76) ────────────────────────── */}
+      {/* ── Expandable & Resizable Content Area ────────────────────── */}
       {isExpanded && activeTab && (
-        <div className="w-76 h-full flex flex-col bg-card overflow-hidden transition-all duration-100">
+        <div
+          style={{ width: `${sidebarWidth}px` }}
+          className="h-full flex flex-col bg-card overflow-hidden transition-none relative"
+        >
           {activeTab === 'assets' && (
             <AssetsPanel
               recipe={recipe}
@@ -213,6 +271,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onApplyTemplate={onApplyRecipe}
             />
           )}
+
+          {/* ── Right Vertical Resize Handle ───────────────────────── */}
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-30 ${
+              isResizing ? 'bg-primary' : 'bg-transparent hover:bg-primary/60'
+            }`}
+            title="Drag left/right to resize sidebar panel (220px - 420px)"
+          />
         </div>
       )}
     </aside>

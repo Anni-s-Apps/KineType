@@ -137,6 +137,11 @@ export const App: React.FC = () => {
             showSafeAreas={store.showSafeAreas}
             audioUrl={store.audioUrl}
             audioElementRef={store.audioElementRef}
+            selectedLayerId={store.selectedLayerId}
+            onSelectLayer={store.setSelectedLayerId}
+            onUpdateLayer={store.updateLayer}
+            onDuplicateLayer={store.duplicateLayer}
+            onRemoveLayer={store.removeLayer}
           />
 
           <Timeline
