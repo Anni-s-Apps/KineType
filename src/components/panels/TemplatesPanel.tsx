@@ -13,13 +13,6 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({
 }) => {
   const templates = [
     {
-      id: 'developerManifesto',
-      title: 'Building Real Software (Full 10-Chunk Video)',
-      description: 'Complete 332s motion graphics: chaos to architecture, AI workflows, multi-platform builds, and open source giveaways.',
-      recipe: SAMPLE_RECIPES.developerManifesto,
-      badge: 'Full Video',
-    },
-    {
       id: 'developerIntro',
       title: "Developer's Journey",
       description: 'Anime software developer, code cards, feature points, and smooth camera zoom.',

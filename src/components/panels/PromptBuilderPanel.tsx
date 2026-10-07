@@ -329,30 +329,89 @@ Turn any voiceover into motion graphics with instant frame seeking.`);
       )}
 
       {/* ── Step 4: Merge Chunk Recipes ────────────────────────────── */}
-      <div className="border-t border-border pt-3 space-y-2">
-        <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-          <Merge className="w-3.5 h-3.5 text-primary" />
-          4. Merge Chunk Recipes
-        </label>
+      <div className="border-t border-border pt-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <Merge className="w-3.5 h-3.5 text-primary" />
+            4. Merge Chunk Recipes
+          </label>
+          <label className="text-[11px] text-primary hover:underline cursor-pointer flex items-center gap-1 font-semibold">
+            <Upload className="w-3 h-3" />
+            Pick Chunk JSONs
+            <input
+              type="file"
+              accept=".json"
+              multiple
+              onChange={async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
+
+                const loadedChunks: any[] = [];
+                for (const file of files) {
+                  try {
+                    const text = await file.text();
+                    const parsed = JSON.parse(text);
+                    const match = file.name.match(/(\d+)/);
+                    const fileIndex = match ? parseInt(match[1]) : loadedChunks.length + 1;
+                    loadedChunks.push({
+                      fileName: file.name,
+                      chunkIndex: parsed.chunkIndex || fileIndex,
+                      recipe: parsed.recipe || parsed,
+                    });
+                  } catch (err) {
+                    console.error('Failed to parse file:', file.name, err);
+                  }
+                }
+
+                // Sort numerically by chunk index
+                loadedChunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
+
+                // Auto-calculate cumulative start times
+                let cumulativeTime = 0;
+                const formattedInputs = loadedChunks.map((c, i) => {
+                  const chunkDuration = c.recipe.settings?.duration || 30;
+                  const item = {
+                    chunkIndex: c.chunkIndex || i + 1,
+                    startTime: Number(cumulativeTime.toFixed(2)),
+                    recipe: c.recipe,
+                  };
+                  cumulativeTime += chunkDuration;
+                  return item;
+                });
+
+                setMergeInputs(JSON.stringify(formattedInputs, null, 2));
+                setMergeStatus(`Loaded & ordered ${loadedChunks.length} chunk JSON files! Ready to merge.`);
+              }}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Upload or paste multiple chunk JSON files. Offsets and camera cues will be merged seamlessly.
+        </p>
+
         <textarea
           value={mergeInputs}
           onChange={(e) => setMergeInputs(e.target.value)}
           rows={4}
-          placeholder='Paste LLM JSON chunk responses: [ { "chunkIndex": 1, "startTime": 0, "recipe": {...} }, ... ]'
+          placeholder='Paste LLM JSON chunk responses or click "Pick Chunk JSONs" above...'
           className="w-full min-h-[90px] bg-background border border-border rounded-xl p-3 font-mono text-xs text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs resize-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         />
+
         <button
           onClick={handleMergeChunks}
           disabled={!mergeInputs.trim()}
-          className="w-full h-9 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-40 text-foreground border border-border font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-2xs"
+          className="w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
         >
           <Merge className="w-3.5 h-3.5" />
-          <span>Merge Chunks into Timeline</span>
+          <span>Merge All Chunks into Video Timeline</span>
         </button>
 
         {mergeStatus && (
-          <p className="text-xs font-mono text-foreground p-2 rounded-lg bg-secondary border border-border animate-in fade-in">
-            {mergeStatus}
+          <p className="text-xs font-mono text-foreground p-2 rounded-lg bg-secondary border border-border animate-in fade-in flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>{mergeStatus}</span>
           </p>
         )}
       </div>
