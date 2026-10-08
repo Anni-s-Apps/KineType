@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import {
   Play,
   Pause,
@@ -130,7 +130,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   const handleRulerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!scrollContainerRef.current) return;
     const rect = scrollContainerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left + scrollContainerRef.current.scrollLeft - 140; // 140px header offset
+    const clickX = e.clientX - rect.left + scrollContainerRef.current.scrollLeft - 144; // 144px (w-36) header offset
     if (clickX < 0) return;
     const time = clickX / pxPerSec;
     handleSeekTime(time);
@@ -143,7 +143,7 @@ export const Timeline: React.FC<TimelineProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
       if (!scrollContainerRef.current) return;
       const rect = scrollContainerRef.current.getBoundingClientRect();
-      const relativeX = e.clientX - rect.left + scrollContainerRef.current.scrollLeft - 140;
+      const relativeX = e.clientX - rect.left + scrollContainerRef.current.scrollLeft - 144;
       const time = Math.max(0, Math.min(duration, relativeX / pxPerSec));
       onSeek(time);
     };
@@ -159,6 +159,46 @@ export const Timeline: React.FC<TimelineProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDraggingPlayhead, pxPerSec, duration, onSeek]);
+
+  // Smart Page Auto-Scroll during playback (Rock-solid, Zero Shake / Zero Vibration)
+  useEffect(() => {
+    if (!isPlaying || isDraggingPlayhead) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const playheadPx = currentTime * pxPerSec + 144; // 144px (w-36) header offset
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+
+    // Advance viewport only when playhead reaches the right edge of screen
+    if (playheadPx > scrollLeft + clientWidth - 50) {
+      container.scrollLeft = playheadPx - 160;
+    } else if (playheadPx < scrollLeft + 144) {
+      container.scrollLeft = Math.max(0, playheadPx - 160);
+    }
+  }, [currentTime, isPlaying, pxPerSec, isDraggingPlayhead]);
+
+  // Auto-scroll to selected layer when clicked
+  useEffect(() => {
+    if (!selectedLayerId || isPlaying) return;
+    const targetLayer = layers.find((l) => l.id === selectedLayerId);
+    if (!targetLayer) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const layerLeftPx = targetLayer.start * pxPerSec + 144;
+    const layerRightPx = targetLayer.end * pxPerSec + 144;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+
+    if (layerLeftPx < scrollLeft + 144 || layerRightPx > scrollLeft + clientWidth) {
+      container.scrollTo({
+        left: Math.max(0, layerLeftPx - 180),
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedLayerId]);
 
   // Layer drag move / trim listeners
   useEffect(() => {
@@ -211,18 +251,23 @@ export const Timeline: React.FC<TimelineProps> = ({
     };
   }, [dragState, pxPerSec, duration, snapToGrid, onUpdateLayer]);
 
-  // Generate waveform bars for visual audio track
+  const totalTimelineWidth = Math.max(1600, (duration + 10) * pxPerSec);
+  const totalRulerSeconds = Math.ceil(totalTimelineWidth / pxPerSec);
+
+  // Generate waveform bars for visual audio track spanning full timeline width
   const waveformBars = useMemo(() => {
-    const count = Math.ceil(duration * 8);
+    const totalPx = Math.max(1600, duration * pxPerSec);
+    const barSpacing = 5; // 3px bar + 2px gap
+    const count = Math.ceil(totalPx / barSpacing);
     const bars: number[] = [];
     for (let i = 0; i < count; i++) {
-      const x = i * 0.4;
-      const wave = Math.sin(x) * 0.4 + Math.cos(x * 2.1) * 0.35 + 0.5;
-      const height = Math.max(15, Math.min(90, Math.round(wave * 80 + 10)));
+      const x = i * 0.35;
+      const wave = Math.sin(x) * 0.35 + Math.cos(x * 1.7) * 0.3 + 0.45;
+      const height = Math.max(20, Math.min(85, Math.round(wave * 65 + 20)));
       bars.push(height);
     }
     return bars;
-  }, [duration]);
+  }, [duration, pxPerSec]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -412,134 +457,146 @@ export const Timeline: React.FC<TimelineProps> = ({
       {/* ── Main Multi-Track Scroll Viewport ───────────────────────── */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto overflow-y-auto relative bg-background flex"
+        className="flex-1 overflow-x-auto overflow-y-auto relative bg-background select-none transform-gpu"
       >
-        {/* Left Fixed Track Headers Column (w-36 / 140px) */}
-        <div className="w-36 shrink-0 bg-card border-r border-border flex flex-col z-20 sticky left-0 shadow-xs">
-          {/* Header ruler label */}
-          <div className="h-6 border-b border-border bg-muted/40 px-2 flex items-center text-[10px] font-mono text-muted-foreground uppercase font-semibold">
-            Track / Layers
-          </div>
-
-          {/* Audio Track Header */}
-          <div className="h-8 border-b border-border px-2 flex items-center justify-between text-xs bg-muted/10">
-            <div className="flex items-center gap-1.5 truncate">
-              <Music className="w-3 h-3 text-emerald-500" />
-              <span className="text-[11px] font-medium text-foreground truncate">
-                {audioFile ? audioFile.name : audioUrl ? 'Voiceover' : 'Audio Track'}
-              </span>
-            </div>
-          </div>
-
-          {/* Camera Track Header */}
-          <div className="h-7 border-b border-border px-2 flex items-center justify-between text-xs bg-muted/10">
-            <div className="flex items-center gap-1.5">
-              <Camera className="w-3 h-3 text-purple-500" />
-              <span className="text-[11px] font-medium text-foreground">Camera</span>
-            </div>
-          </div>
-
-          {/* Layer Track Headers */}
-          <div className="py-1 space-y-1">
-            {layers.map((layer) => (
-              <div
-                key={layer.id}
-                onClick={() => onSelectLayer(layer.id)}
-                className={`h-7 px-2 flex items-center gap-1.5 text-[11px] cursor-pointer transition-colors truncate ${
-                  selectedLayerId === layer.id ? 'bg-secondary font-semibold text-foreground' : 'hover:bg-muted/40 text-muted-foreground'
-                }`}
-              >
-                {getLayerIcon(layer.type)}
-                <span className="truncate">#{layer.id}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Scrollable Timeline Workspace Area */}
         <div
-          className="relative min-h-full"
-          style={{ width: `${timelineContentWidth + 160}px` }}
+          className="relative flex flex-col min-h-full"
+          style={{ width: `${totalTimelineWidth + 144}px` }}
         >
-          {/* 1. Precise Time Ruler with Sub-second ticks */}
-          <div
-            onClick={handleRulerClick}
-            className="h-6 border-b border-border bg-muted/30 relative cursor-pointer"
-          >
-            {Array.from({ length: Math.ceil(duration) + 1 }).map((_, s) => {
-              const left = s * pxPerSec;
-              return (
-                <div key={s} className="absolute top-0 bottom-0" style={{ left: `${left}px` }}>
-                  <div className="h-2 w-px bg-border/80" />
-                  <span className="text-[9px] font-mono text-muted-foreground ml-1 -mt-0.5 select-none block">
-                    {s}s
-                  </span>
-                  {/* Half-second sub-tick */}
-                  {s < duration && (
+          {/* Top Sticky Ruler Row (Track/Layers Label + Time Ruler Ticks) */}
+          <div className="h-7 border-b border-border bg-card flex sticky top-0 z-40 shadow-xs shrink-0">
+            {/* Left Header Cell (Sticky Left & Sticky Top) */}
+            <div className="w-36 shrink-0 bg-card border-r border-border h-full px-2.5 flex items-center text-[10px] font-mono text-muted-foreground uppercase font-bold tracking-wider sticky left-0 z-50">
+              Track / Layers
+            </div>
+            {/* Right Ruler Ticks */}
+            <div
+              onClick={handleRulerClick}
+              className="relative flex-1 h-full cursor-pointer bg-card"
+            >
+              {Array.from({ length: totalRulerSeconds + 1 }).map((_, s) => {
+                const left = s * pxPerSec;
+                const isPastProjectEnd = s > duration;
+                return (
+                  <div key={s} className="absolute top-0 bottom-0" style={{ left: `${left}px` }}>
+                    <div className={`h-2.5 w-px ${isPastProjectEnd ? 'bg-border/30' : 'bg-border/80'}`} />
+                    <span className={`text-[9px] font-mono ml-1.5 -mt-0.5 select-none block ${isPastProjectEnd ? 'text-muted-foreground/35' : 'text-muted-foreground'}`}>
+                      {s}s
+                    </span>
                     <div
-                      className="absolute top-0 h-1 w-px bg-border/40"
+                      className="absolute top-0 h-1.5 w-px bg-border/40"
                       style={{ left: `${pxPerSec * 0.5}px` }}
                     />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 2. Audio Waveform Track */}
-          <div
-            onClick={handleRulerClick}
-            className="h-8 border-b border-border/80 bg-muted/10 relative flex items-center px-1 overflow-hidden cursor-pointer"
-          >
-            <div className="flex items-center gap-0.5 h-full py-1 w-full opacity-70">
-              {waveformBars.map((height, i) => {
-                const barTime = (i / waveformBars.length) * duration;
-                const isPast = barTime <= currentTime;
-                return (
-                  <div
-                    key={i}
-                    className={`w-1 rounded-xs transition-colors ${
-                      isPast ? 'bg-emerald-500' : 'bg-emerald-500/30'
-                    }`}
-                    style={{ height: `${height}%` }}
-                  />
+                  </div>
                 );
               })}
             </div>
           </div>
 
-          {/* 3. Camera Keyframes Track */}
-          <div
-            onClick={handleRulerClick}
-            className="h-7 border-b border-border/60 bg-muted/5 relative flex items-center cursor-pointer"
-          >
-            {(recipe.camera || []).map((cam, idx) => {
-              const left = cam.start * pxPerSec;
-              const width = Math.max(20, (cam.end - cam.start) * pxPerSec);
-              return (
+          {/* Row 1: Audio Track */}
+          <div className="h-8 border-b border-border/40 flex items-center shrink-0 bg-muted/5 hover:bg-muted/10 transition-colors">
+            <div className="w-36 shrink-0 bg-card border-r border-border h-full px-2.5 flex items-center justify-between text-xs sticky left-0 z-20 shadow-2xs">
+              <div className="flex items-center gap-1.5 truncate">
+                <Music className={`w-3.5 h-3.5 ${audioFile || audioUrl ? 'text-emerald-500' : 'text-muted-foreground/50'}`} />
+                <span className={`text-[11px] font-medium truncate ${audioFile || audioUrl ? 'text-foreground font-semibold' : 'text-muted-foreground/70'}`}>
+                  {audioFile ? audioFile.name : audioUrl ? 'Voiceover' : 'Audio Track'}
+                </span>
+              </div>
+            </div>
+            <div
+              onClick={handleRulerClick}
+              className="relative flex-1 h-full flex items-center cursor-pointer overflow-hidden"
+            >
+              {audioFile || audioUrl ? (
                 <div
-                  key={idx}
-                  className="absolute h-5 rounded bg-purple-500/15 border border-purple-500/40 text-[9px] font-mono text-purple-600 dark:text-purple-300 px-1.5 flex items-center gap-1"
-                  style={{ left: `${left}px`, width: `${width}px` }}
+                  className="flex items-center gap-[2px] h-full py-1.5 px-2 bg-emerald-500/10 border-y border-emerald-500/20"
+                  style={{ width: `${Math.max(totalTimelineWidth, duration * pxPerSec)}px` }}
                 >
-                  <span className="w-1.5 h-1.5 rotate-45 bg-purple-500 inline-block" />
-                  <span>{cam.zoom}x</span>
+                  {waveformBars.map((height, i) => {
+                    const barTime = (i / waveformBars.length) * duration;
+                    const isPast = barTime <= currentTime;
+                    return (
+                      <div
+                        key={i}
+                        className={`w-[3px] rounded-full shrink-0 transition-colors ${
+                          isPast ? 'bg-emerald-500' : 'bg-emerald-500/40'
+                        }`}
+                        style={{ height: `${height}%` }}
+                      />
+                    );
+                  })}
                 </div>
-              );
-            })}
+              ) : (
+                <div className="flex items-center gap-2 px-3 text-[10px] font-mono text-muted-foreground/40 italic select-none">
+                  <Music className="w-3 h-3 opacity-40" />
+                  <span>No audio track loaded (click to seek)</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* 4. Layer Tracks Blocks */}
-          <div className="py-1 space-y-1">
-            {layers.map((layer) => {
-              const isSelected = selectedLayerId === layer.id;
-              const left = layer.start * pxPerSec;
-              const width = Math.max(24, (layer.end - layer.start) * pxPerSec);
-              const colorClasses = getLayerColor(layer.type, isSelected);
+          {/* Row 2: Camera Track */}
+          <div className="h-8 border-b border-border/40 flex items-center shrink-0 bg-muted/5 hover:bg-muted/10 transition-colors">
+            <div className="w-36 shrink-0 bg-card border-r border-border h-full px-2.5 flex items-center justify-between text-xs sticky left-0 z-20 shadow-2xs">
+              <div className="flex items-center gap-1.5 truncate">
+                <Camera className="w-3.5 h-3.5 text-purple-500" />
+                <span className="text-[11px] font-medium text-foreground">Camera Keyframes</span>
+              </div>
+            </div>
+            <div
+              onClick={handleRulerClick}
+              className="relative flex-1 h-full flex items-center cursor-pointer"
+            >
+              {(recipe.camera || []).map((cam, idx) => {
+                const left = cam.start * pxPerSec;
+                const width = Math.max(28, (cam.end - cam.start) * pxPerSec - 4);
+                return (
+                  <div
+                    key={idx}
+                    className="absolute h-5.5 rounded-md bg-purple-500/15 border border-purple-500/35 text-[10px] font-mono text-purple-700 dark:text-purple-300 px-2 flex items-center justify-between shadow-2xs hover:bg-purple-500/25 transition-colors"
+                    style={{ left: `${left + 2}px`, width: `${width}px` }}
+                    title={`Camera Zoom: ${cam.zoom}x (${cam.start}s - ${cam.end}s)`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-2 h-2 rotate-45 bg-purple-500 shadow-xs inline-block shrink-0" />
+                      <span className="font-semibold">{cam.zoom}x</span>
+                    </div>
+                    <span className="text-[8px] opacity-60 ml-1 shrink-0">
+                      {(cam.end - cam.start).toFixed(1)}s
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-              return (
-                <div key={layer.id} className="h-7 relative flex items-center">
-                  {/* Layer Block Box */}
+          {/* Layer Rows */}
+          {layers.map((layer) => {
+            const isSelected = selectedLayerId === layer.id;
+            const left = layer.start * pxPerSec;
+            const width = Math.max(24, (layer.end - layer.start) * pxPerSec);
+            const colorClasses = getLayerColor(layer.type, isSelected);
+
+            return (
+              <div
+                key={layer.id}
+                className={`h-8 border-b border-border/40 flex items-center shrink-0 transition-colors ${
+                  isSelected ? 'bg-primary/5' : 'hover:bg-muted/10'
+                }`}
+              >
+                {/* Left Track Header Cell */}
+                <div
+                  onClick={() => onSelectLayer(layer.id)}
+                  className={`w-36 shrink-0 border-r border-border h-full px-2.5 flex items-center gap-1.5 text-[11px] cursor-pointer transition-colors truncate sticky left-0 z-20 shadow-2xs ${
+                    isSelected ? 'bg-secondary font-semibold text-foreground' : 'bg-card hover:bg-muted/40 text-muted-foreground'
+                  }`}
+                >
+                  {getLayerIcon(layer.type)}
+                  <span className="truncate">#{layer.id}</span>
+                </div>
+
+                {/* Right Lane with Draggable Block */}
+                <div className="relative flex-1 h-full flex items-center">
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
@@ -607,22 +664,31 @@ export const Timeline: React.FC<TimelineProps> = ({
                     />
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
 
-          {/* 5. Smooth Red Playhead Line & Pin */}
+          {/* Full-Height Modern DAW Precision Red Playhead Line & Floating Pin */}
           <div
             onMouseDown={(e) => {
               e.stopPropagation();
               setIsDraggingPlayhead(true);
             }}
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 cursor-ew-resize group pointer-events-auto"
-            style={{ left: `${currentTime * pxPerSec}px` }}
+            className="absolute top-0 bottom-0 z-[60] cursor-ew-resize group pointer-events-auto flex flex-col items-center"
+            style={{ left: `${currentTime * pxPerSec + 144}px`, width: '1px' }}
           >
-            {/* Playhead Pin Handle */}
-            <div className="w-3 h-3 bg-red-500 -ml-[5px] -top-1 absolute rotate-45 shadow-md shadow-red-500/40 rounded-xs group-hover:scale-125 transition-transform" />
-            <div className="w-px h-full bg-red-500 shadow-sm" />
+            {/* Precision DAW Marker Pin Head - Elevated STICKY TOP */}
+            <div className="sticky top-0 z-[70] flex flex-col items-center select-none -mt-0.5 group-hover:scale-110 active:scale-95 transition-transform">
+              {/* Sleek Top Marker Head with Precision Center Notch */}
+              <div className="w-3.5 h-3.5 bg-gradient-to-b from-rose-500 via-red-500 to-red-600 rounded-t-sm shadow-md shadow-red-500/50 border border-rose-300/40 flex items-center justify-center">
+                <div className="w-0.5 h-2 bg-white/90 rounded-full" />
+              </div>
+              {/* Downward Precision Pointer Arrow */}
+              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-red-600 -mt-[1px] drop-shadow-xs" />
+            </div>
+
+            {/* Glowing Precision Laser Needle Line */}
+            <div className="w-[1.5px] flex-1 bg-gradient-to-b from-red-500 via-rose-500 to-red-600 shadow-[0_0_6px_rgba(239,68,68,0.7)]" />
           </div>
         </div>
       </div>

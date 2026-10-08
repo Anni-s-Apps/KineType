@@ -283,20 +283,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <div className="w-18 shrink-0">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
               <label className="text-[11px] font-medium text-muted-foreground block mb-1">
-                Size
+                Size (px)
               </label>
               <input
                 type="number"
                 value={(layer as any).size || 52}
                 onChange={(e) => onUpdateLayer(layer.id, { size: parseFloat(e.target.value) } as any)}
-                className="w-full h-8 bg-background border border-border rounded-lg px-2 text-xs font-mono text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                className="w-full h-8 bg-background border border-border rounded-lg px-2.5 text-xs font-mono text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
               />
             </div>
 
-            <div className="w-26 shrink-0">
+            <div>
               <label className="text-[11px] font-medium text-muted-foreground block mb-1">
                 Color
               </label>
@@ -312,16 +312,33 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 </span>
               </div>
             </div>
+          </div>
 
-            <div className="flex-1 min-w-0">
-              <label className="text-[11px] font-medium text-muted-foreground block mb-1">
-                Align
-              </label>
-              <CustomSelect
-                value={(layer as any).align || 'center'}
-                onChange={(val) => onUpdateLayer(layer.id, { align: val } as any)}
-                options={ALIGN_OPTIONS}
-              />
+          <div className="text-xs">
+            <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+              Text Alignment
+            </label>
+            <div className="grid grid-cols-3 gap-1 bg-muted/60 p-0.5 rounded-lg border border-border">
+              {(['left', 'center', 'right'] as const).map((alignVal) => {
+                const isSelected = ((layer as any).align || 'center') === alignVal;
+                return (
+                  <button
+                    key={alignVal}
+                    type="button"
+                    onClick={() => onUpdateLayer(layer.id, { align: alignVal } as any)}
+                    className={`h-7 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer capitalize ${
+                      isSelected
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/80'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {alignVal === 'left' && <AlignLeft className="w-3.5 h-3.5" />}
+                    {alignVal === 'center' && <AlignCenter className="w-3.5 h-3.5" />}
+                    {alignVal === 'right' && <AlignRight className="w-3.5 h-3.5" />}
+                    <span>{alignVal}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

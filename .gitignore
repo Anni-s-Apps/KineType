@@ -9,6 +9,7 @@ build/
 
 # Reference Clones
 _reference_caption_studio/
+reference_caption_studio/
 
 # Environment and temp
 .env
