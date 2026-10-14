@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const AUDIO_PATH = path.resolve('public/audio/kaash_tu_yahin_hoti.mp3');
 
 async function transcribe() {

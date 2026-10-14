@@ -84,8 +84,16 @@ export const ShortsStudio: React.FC = () => {
     );
   };
   const [groqKey, setGroqKey] = useState<string>(
-    localStorage.getItem('recipecut_groq_key') || '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'
+    localStorage.getItem('kinetype_groq_key') ||
+      localStorage.getItem('recipecut_groq_key') ||
+      (import.meta as any).env?.VITE_GROQ_API_KEY ||
+      ''
   );
+
+  const handleUpdateGroqKey = (newKey: string) => {
+    setGroqKey(newKey);
+    localStorage.setItem('kinetype_groq_key', newKey);
+  };
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   const [transcribeStatus, setTranscribeStatus] = useState<string>('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -749,7 +757,7 @@ export const ShortsStudio: React.FC = () => {
           uploadedFile={uploadedFile}
           handleAudioUpload={handleAudioUpload}
           groqKey={groqKey}
-          setGroqKey={setGroqKey}
+          setGroqKey={handleUpdateGroqKey}
           handleRunTranscription={handleRunTranscription}
           isTranscribing={isTranscribing}
           transcribeStatus={transcribeStatus}

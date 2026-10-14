@@ -1,7 +1,16 @@
 # ⚡ Kinetype Studio
 
+<p align="center">
+  <a href="https://github.com/Anni-s-Apps/KineType/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License" /></a>
+  <img src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Deterministic-60%20FPS-ff5c35?style=flat-square" alt="60 FPS" />
+  <img src="https://img.shields.io/badge/WebCodecs-Hardware%20Accelerated-success?style=flat-square" alt="WebCodecs" />
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome" /></a>
+</p>
+
 > **The Open-Source Kinetic Typography & Motion-as-Code Video Engine.**  
-> Turn music, voiceovers, and lyrics into cinema-grade 60 FPS motion videos directly in the browser.
+> Turn music, voiceovers, and lyrics into cinema-grade 60 FPS motion videos directly in the browser with zero cloud render costs.
 
 ---
 
@@ -10,6 +19,7 @@
 - 🎬 **18 Built-in Kinetic Typography Styles**: Editorial Spring Slam, Multi-Ring Spiral, 3D Vortex, Cyber Glitch, Weightless Float, Comic Pop-Art, Venetian Split, Sine Wave, Neon Tube, Letterpress Stamp, Waterfall Cascade, Jelly Elastic, Swiss Specimen, and more.
 - ⚡ **Deterministic 60 FPS WebCodecs Export**: Pure offline frame-by-frame rendering engine with GPU backpressure protection — zero frame drops, zero desync, and full-duration MP4 generation.
 - 🎵 **Groq Whisper AI Alignment**: Word-level timestamp synchronization directly in-browser using Groq's high-speed Whisper API.
+- 🇮🇳 **Multilingual & Devanagari Support**: Built-in support for Hindi/Devanagari matras and English with crisp typography.
 - 🌿 **Procedural Motifs & Overlays**: Real-time canvas overlays including Bonsai trees, botanical ferns, audio waveforms, celestial stars, floating petals, and film grain.
 - 🤖 **AI Style Creator Framework**: Includes the Master AI Prompt for Claude, ChatGPT, Cursor, and Windsurf to create new custom animation styles in seconds.
 - 📱 **Dual Aspect Ratio Support**: 9:16 Vertical (Shorts, Reels, TikTok) and 16:9 Landscape (YouTube, Cinema).
@@ -24,8 +34,8 @@
 
 ### Installation
 ```bash
-git clone https://github.com/your-username/kinetype-studio.git
-cd kinetype-studio
+git clone https://github.com/Anni-s-Apps/KineType.git
+cd KineType
 npm install
 ```
 
@@ -95,6 +105,17 @@ Kinetype Studio features a deterministic browser-based rendering pipeline:
 
 ---
 
+## 🤝 Contributing & Community
+
+Contributions are what make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
+
+- 📖 **New Style Guide**: Check out our [Contributing Guide](CONTRIBUTING.md) to build and submit your own kinetic typography styles.
+- 🎵 **Song Pipeline**: Learn how to process, align, and add custom music tracks in the [Audio Pipeline Guide](PIPELINE_GUIDE.md).
+- 📜 **Code of Conduct**: Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+---
+
 ## 📄 License
 
-MIT License. Free for personal and commercial use. Contributions are welcome!
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information. Free for personal and commercial use!
+

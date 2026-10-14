@@ -14,9 +14,7 @@ import path from 'path';
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const GROQ_API_KEY =
-  process.env.GROQ_API_KEY ||
-  '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';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 async function main() {
   const args = process.argv.slice(2);

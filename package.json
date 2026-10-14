@@ -3,6 +3,23 @@
   "private": true,
   "version": "2.0.0",
   "description": "Open-Source Kinetic Typography & Motion-as-Code Video Studio Engine",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anni-s-Apps/KineType.git"
+  },
+  "keywords": [
+    "kinetic-typography",
+    "motion-graphics",
+    "video-generator",
+    "canvas-animation",
+    "webcodecs",
+    "lyrics-video",
+    "groq-whisper",
+    "remotion-alternative",
+    "react19",
+    "typescript"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
