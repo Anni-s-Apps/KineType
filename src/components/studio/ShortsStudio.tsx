@@ -23,6 +23,10 @@ import {
   TimedWord,
   TimedLine,
 } from './styles';
+import {
+  GRAPHIC_OPTIONS,
+  renderGraphicsOverlay,
+} from './graphics';
 
 export type MotionStyle = string;
 
@@ -53,6 +57,18 @@ export const ShortsStudio: React.FC = () => {
   const [fontSize, setFontSize] = useState<number>(72);
   const [uppercase, setUppercase] = useState<boolean>(true);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [activeGraphics, setActiveGraphics] = useState<string[]>([
+    'corners',
+    'waveform',
+    'particles',
+    'stars',
+  ]);
+
+  const toggleGraphic = (id: string) => {
+    setActiveGraphics(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
   const [groqKey, setGroqKey] = useState<string>(
     localStorage.getItem('recipecut_groq_key') || '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'
   );
@@ -224,6 +240,18 @@ export const ShortsStudio: React.FC = () => {
       c.fillStyle = vig;
       c.fillRect(0, 0, W, H);
 
+      // 1.5 Graphic Overlays (Corners, Waveform, Particles, Stars, Vinyl, Now Playing)
+      renderGraphicsOverlay(activeGraphics, {
+        c,
+        W,
+        H,
+        t,
+        isLandscape,
+        songTitle,
+        C,
+        isPlaying,
+      });
+
       // Active timing and text formatting
       const curLine =
         lines.find(l => t >= l.start && t < l.end) ||
@@ -308,7 +336,7 @@ export const ShortsStudio: React.FC = () => {
         c.textAlign = 'left';
       }
     },
-    [songTitle, lines, words, motionStyle, fontSize, uppercase, orientation]
+    [songTitle, lines, words, motionStyle, fontSize, uppercase, orientation, activeGraphics, isPlaying]
   );
 
   // Animation Loop (60fps requestAnimationFrame)
@@ -661,6 +689,54 @@ export const ShortsStudio: React.FC = () => {
                 className="w-full"
                 style={{ accentColor: '#c94f00' }}
               />
+            </div>
+          </div>
+
+          {/* 5. Visual Graphics & Overlays */}
+          <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
+                <Sparkles className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />5. Video Graphics & Overlays
+              </h2>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(201,79,0,0.1)', color: '#c94f00' }}>
+                {activeGraphics.length} active
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-1.5">
+              {GRAPHIC_OPTIONS.map(g => {
+                const isActive = activeGraphics.includes(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => toggleGraphic(g.id)}
+                    className="flex items-center justify-between p-2 rounded-lg text-left text-xs transition border cursor-pointer hover:opacity-90"
+                    style={{
+                      background: isActive ? '#f5eee0' : 'rgba(245,238,224,0.3)',
+                      borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.12)',
+                      color: isActive ? '#1a1209' : '#7a6e5f',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-mono w-4 text-center shrink-0" style={{ color: isActive ? '#c94f00' : '#7a6e5f' }}>
+                        {g.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-semibold truncate">{g.label}</div>
+                        <div className="text-[10px] truncate opacity-70">{g.desc}</div>
+                      </div>
+                    </div>
+                    <span
+                      className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-2"
+                      style={{
+                        background: isActive ? '#c94f00' : 'rgba(26,18,9,0.06)',
+                        color: isActive ? '#fff' : '#7a6e5f',
+                      }}
+                    >
+                      {isActive ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
