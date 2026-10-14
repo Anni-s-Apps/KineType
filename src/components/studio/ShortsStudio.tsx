@@ -17,6 +17,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import defaultSongData from '../../data/defaultSong.json';
+import hindiSongData from '../../data/kaashTuYahinHoti.json';
 import { transcribeWithGroq } from '../../services/transcription';
 import {
   MOTION_STYLES,
@@ -203,12 +204,24 @@ export const ShortsStudio: React.FC = () => {
     }
   };
 
-  const handleLoadDemoSong = () => {
-    setSongTitle(defaultSongData.title);
-    setAudioUrl(defaultSongData.audioUrl);
-    setWords(defaultSongData.words as TimedWord[]);
-    setLines(initialLines);
-    setDuration(defaultSongData.duration);
+  const handleLoadDemoSong = (songKey: 'better' | 'kaash' = 'better') => {
+    const data = songKey === 'kaash' ? (hindiSongData as any) : (defaultSongData as any);
+    setSongTitle(data.title);
+    setAudioUrl(data.audioUrl);
+    setWords(data.words as TimedWord[]);
+    const parsedLines: TimedLine[] = (data.lines || []).map((l: any) => ({
+      i: l.i,
+      text: l.text,
+      start: l.start,
+      end: l.end,
+      words: (l.words || []).map((w: any) => ({
+        word: w.word || w.w || '',
+        start: w.start,
+        end: w.end,
+      })),
+    }));
+    setLines(parsedLines);
+    setDuration(data.duration);
     setIsPlaying(false);
     setCurrentTime(0);
     if (audioRef.current) audioRef.current.currentTime = 0;
@@ -524,18 +537,36 @@ export const ShortsStudio: React.FC = () => {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleLoadDemoSong}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-            style={{
-              background: '#fdfbf7',
-              borderColor: 'rgba(28,21,13,0.16)',
-              color: '#1c150d',
-            }}
+          {/* Song Switcher Segment */}
+          <div
+            className="flex items-center p-0.5 rounded-xl border text-xs font-semibold"
+            style={{ background: '#e3d7c3', borderColor: 'rgba(28,21,13,0.12)' }}
           >
-            <Music className="w-3.5 h-3.5" style={{ color: '#d95d39' }} />
-            <span>Load Demo Track</span>
-          </button>
+            <button
+              onClick={() => handleLoadDemoSong('better')}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                audioUrl.includes('better_on_my_own')
+                  ? 'bg-white text-[#d95d39] shadow-xs font-bold'
+                  : 'text-[#5a4e40] hover:text-[#1c150d]'
+              }`}
+              title="Better on My Own (English Demo)"
+            >
+              <Music className="w-3.5 h-3.5" />
+              <span>Demo 1</span>
+            </button>
+            <button
+              onClick={() => handleLoadDemoSong('kaash')}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                audioUrl.includes('kaash_tu_yahin_hoti')
+                  ? 'bg-white text-[#d95d39] shadow-xs font-bold'
+                  : 'text-[#5a4e40] hover:text-[#1c150d]'
+              }`}
+              title="Kaash Tu Yahin Hoti (Hindi Acoustic Demo 🇮🇳)"
+            >
+              <span className="text-[12px] leading-none">🇮🇳</span>
+              <span>Kaash Tu Yahin Hoti</span>
+            </button>
+          </div>
 
           {/* Framerate Selection Segment */}
           <div
@@ -723,6 +754,8 @@ export const ShortsStudio: React.FC = () => {
           isTranscribing={isTranscribing}
           transcribeStatus={transcribeStatus}
           songTitle={songTitle}
+          audioUrl={audioUrl}
+          onLoadDemoSong={handleLoadDemoSong}
           wordsCount={words.length}
           linesCount={lines.length}
           duration={duration}

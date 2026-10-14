@@ -41,6 +41,8 @@ export interface StudioSidebarProps {
   isTranscribing: boolean;
   transcribeStatus: string;
   songTitle: string;
+  audioUrl?: string;
+  onLoadDemoSong?: (songId: 'better' | 'kaash') => void;
   wordsCount: number;
   linesCount: number;
   duration: number;
@@ -70,6 +72,8 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   isTranscribing,
   transcribeStatus,
   songTitle,
+  audioUrl,
+  onLoadDemoSong,
   wordsCount,
   linesCount,
   duration,
@@ -483,6 +487,45 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
 
             <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {/* Pre-aligned Demo Tracks */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#1c150d]">Demo Audio Tracks</span>
+                  <span className="text-[10px] text-[#8c7f70]">Groq Aligned</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => onLoadDemoSong?.('better')}
+                    className="p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between"
+                    style={{
+                      background: audioUrl?.includes('better_on_my_own') ? '#fffaf4' : '#fdfbf7',
+                      borderColor: audioUrl?.includes('better_on_my_own') ? '#d95d39' : 'rgba(28,21,13,0.14)',
+                      boxShadow: audioUrl?.includes('better_on_my_own') ? '0 0 0 1.5px #d95d39' : 'none',
+                    }}
+                  >
+                    <div className="text-[11px] font-bold truncate text-[#1c150d]">Better on My Own</div>
+                    <div className="text-[9px] text-[#7a6e60] mt-1 flex items-center gap-1 font-medium">
+                      <span>🌙 Pop • English</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => onLoadDemoSong?.('kaash')}
+                    className="p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between"
+                    style={{
+                      background: audioUrl?.includes('kaash_tu_yahin_hoti') ? '#fffaf4' : '#fdfbf7',
+                      borderColor: audioUrl?.includes('kaash_tu_yahin_hoti') ? '#d95d39' : 'rgba(28,21,13,0.14)',
+                      boxShadow: audioUrl?.includes('kaash_tu_yahin_hoti') ? '0 0 0 1.5px #d95d39' : 'none',
+                    }}
+                  >
+                    <div className="text-[11px] font-bold truncate text-[#1c150d]">Kaash Tu Yahin Hoti</div>
+                    <div className="text-[9px] text-[#7a6e60] mt-1 flex items-center gap-1 font-medium">
+                      <span>🇮🇳 Acoustic • Hindi</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               {/* Dropzone */}
               <div
                 className="border-2 border-dashed rounded-xl p-5 text-center relative cursor-pointer hover:bg-black/5 transition"
