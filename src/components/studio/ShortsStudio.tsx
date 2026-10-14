@@ -86,6 +86,10 @@ export const ShortsStudio: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const mediaDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const exportCancelRef = useRef<(() => void) | null>(null);
 
   // Sync audio play/pause
   useEffect(() => {
@@ -360,59 +364,160 @@ export const ShortsStudio: React.FC = () => {
     };
   }, [isPlaying, currentTime, renderFrame]);
 
-  // Export to MP4 / WebM
+  // Export to MP4 / WebM (Silent mode + Rich Console Debugging)
   const handleExportVideo = async () => {
-    const canvas = canvasRef.current,
-      audio = audioRef.current;
-    if (!canvas || !audio) return;
+    const canvas = canvasRef.current;
+    const audio = audioRef.current;
+    if (!canvas || !audio) {
+      console.error('❌ [Export Video] Canvas or Audio ref is null!');
+      return;
+    }
+
+    console.log('🎬 [Export Video] Initializing video export...', {
+      songTitle,
+      orientation,
+      resolution: orientation === 'portrait' ? '1080×1920' : '1920×1080',
+      duration,
+      motionStyle,
+      activeGraphics,
+    });
+
     try {
       setIsExporting(true);
       setExportProgress(0);
       setIsPlaying(false);
+
+      // 60fps canvas stream
       const stream = canvas.captureStream(60);
-      const audioCtx = new AudioContext();
-      const src = audioCtx.createMediaElementSource(audio);
-      const dest = audioCtx.createMediaStreamDestination();
+
+      // Web Audio setup (reuse context & source node to prevent InvalidStateError)
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const audioCtx = audioCtxRef.current;
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
+      if (!audioSourceRef.current) {
+        audioSourceRef.current = audioCtx.createMediaElementSource(audio);
+      }
+      const src = audioSourceRef.current;
+
+      if (!mediaDestRef.current) {
+        mediaDestRef.current = audioCtx.createMediaStreamDestination();
+      }
+      const dest = mediaDestRef.current;
+
+      // Disconnect previous connections safely
+      try {
+        src.disconnect();
+      } catch (e) {
+        // Safe to ignore if not connected
+      }
+
+      // Route audio ONLY to recorder destination stream — NOT to audioCtx.destination!
+      // This keeps user speakers completely SILENT so music doesn't blast or auto-play!
       src.connect(dest);
-      src.connect(audioCtx.destination);
+
       const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
         ? 'video/mp4;codecs=avc1'
-        : 'video/webm;codecs=vp9';
-      const rec = new MediaRecorder(
-        new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]),
-        { mimeType, videoBitsPerSecond: 14_000_000 }
-      );
+        : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+
+      console.log('🎬 [Export Video] Selected container mimeType:', mimeType);
+
+      const combinedStream = new MediaStream([
+        ...stream.getVideoTracks(),
+        ...dest.stream.getAudioTracks(),
+      ]);
+
+      const rec = new MediaRecorder(combinedStream, {
+        mimeType,
+        videoBitsPerSecond: 16_000_000, // 16 Mbps high-fidelity
+      });
+
       const chunks: Blob[] = [];
       rec.ondataavailable = e => {
-        if (e.data.size > 0) chunks.push(e.data);
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+          console.log(`📦 [Export Video] Captured chunk #${chunks.length} (${(e.data.size / 1024).toFixed(1)} KB)`);
+        }
       };
-      rec.onstop = () => {
+
+      let isCancelled = false;
+
+      const finishExport = () => {
+        if (isCancelled) return;
+        console.log(`🏁 [Export Video] Recording complete. Assembling ${chunks.length} chunks into final video...`);
         const blob = new Blob(chunks, { type: mimeType });
+        console.log(`✅ [Export Video] Export finished! File size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${songTitle.replace(/[^\w]/g, '_')}_${orientation}.${
-          mimeType.includes('mp4') ? 'mp4' : 'webm'
-        }`;
+        const cleanName = songTitle.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+        a.download = `${cleanName || 'kinetic_video'}_${orientation}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`;
         a.click();
         URL.revokeObjectURL(url);
+
+        setIsExporting(false);
+        setExportProgress(0);
+        audio.currentTime = 0;
+        audio.pause();
+      };
+
+      rec.onstop = finishExport;
+
+      exportCancelRef.current = () => {
+        console.warn('🛑 [Export Video] Export cancelled by user.');
+        isCancelled = true;
+        try {
+          if (rec.state !== 'inactive') rec.stop();
+        } catch (e) {}
+        audio.pause();
+        audio.currentTime = 0;
         setIsExporting(false);
         setExportProgress(0);
       };
-      rec.start(200);
+
+      rec.start(250);
       audio.currentTime = 0;
-      audio.play();
+      await audio.play();
+
+      console.log('▶️ [Export Video] Rendering underway in silent mode (no speaker output)...');
+
       const tick = setInterval(() => {
-        setExportProgress(Math.round((audio.currentTime / duration) * 100));
-        if (audio.currentTime >= duration - 0.2) {
+        if (isCancelled) {
           clearInterval(tick);
-          rec.stop();
+          return;
+        }
+
+        const pct = Math.min(100, Math.round((audio.currentTime / duration) * 100));
+        setExportProgress(pct);
+
+        console.log(
+          `⏱️ [Export Video] Progress: ${pct}% (${audio.currentTime.toFixed(1)}s / ${duration.toFixed(1)}s)`
+        );
+
+        if (audio.currentTime >= duration - 0.15 || audio.ended) {
+          clearInterval(tick);
+          console.log('⏹️ [Export Video] Reached track end. Stopping recorder...');
+          try {
+            if (rec.state !== 'inactive') rec.stop();
+          } catch (e) {}
           audio.pause();
         }
       }, 250);
     } catch (err) {
-      console.error(err);
+      console.error('❌ [Export Video Error]:', err);
       setIsExporting(false);
+      setExportProgress(0);
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
     }
   };
 
@@ -424,98 +529,179 @@ export const ShortsStudio: React.FC = () => {
       className="flex-1 flex flex-col h-full overflow-hidden select-none"
       style={{ background: '#f4edd8', fontFamily: '"IBM Plex Mono", monospace', color: '#1a1209' }}
     >
-      {/* ── TOP BAR ────────────────────────────────────────────────────────── */}
+      {/* ── TOP BAR (UPGRADED EDITORIAL) ────────────────────────────────────── */}
       <div
-        className="h-13 border-b flex items-center justify-between px-6 shrink-0 z-10"
-        style={{ borderColor: 'rgba(26,18,9,0.18)', background: '#ede4cc' }}
+        className="h-14 border-b flex items-center justify-between px-6 shrink-0 z-10 select-none"
+        style={{ borderColor: 'rgba(28,21,13,0.12)', background: '#eee5d5' }}
       >
+        {/* Brand & Track Info */}
         <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center border"
-            style={{ background: '#c94f00', borderColor: 'rgba(201,79,0,0.4)' }}
+            className="w-8 h-8 rounded-xl flex items-center justify-center shadow-xs"
+            style={{ background: '#d95d39' }}
           >
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight flex items-center gap-2" style={{ color: '#1a1209' }}>
-              Kinetic Shorts Studio
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold tracking-tight text-[#1c150d]">
+                Kinetic Typography Studio
+              </h1>
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold"
                 style={{
-                  background: 'rgba(201,79,0,0.12)',
-                  color: '#c94f00',
-                  borderColor: 'rgba(201,79,0,0.3)',
+                  background: 'rgba(217,93,57,0.12)',
+                  color: '#d95d39',
+                  borderColor: 'rgba(217,93,57,0.3)',
                 }}
               >
                 {orientation === 'portrait' ? '1080×1920 (9:16)' : '1920×1080 (16:9)'}
               </span>
-            </h1>
-            <p className="text-[10px]" style={{ color: '#7a6e5f' }}>
-              pdoom motion styles · warm paper
+            </div>
+            <p className="text-[10px] text-[#7a6e60]">
+              Word-synced typography · Warm textured paper
             </p>
           </div>
         </div>
 
-        {/* ── PORTRAIT / LANDSCAPE FORMAT TOGGLE IN TOP BAR ── */}
+        {/* Format / Aspect Ratio Segmented Control */}
         <div
           className="flex items-center gap-1 p-1 rounded-xl border"
-          style={{ background: '#e0d4bc', borderColor: 'rgba(26,18,9,0.18)' }}
+          style={{ background: '#e3d7c3', borderColor: 'rgba(28,21,13,0.12)' }}
         >
           <button
             onClick={() => setOrientation('portrait')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-              orientation === 'portrait' ? 'shadow-sm text-white' : 'hover:opacity-75'
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              orientation === 'portrait'
+                ? 'bg-white text-[#d95d39] shadow-xs font-bold'
+                : 'text-[#5a4e40] hover:text-[#1c150d]'
             }`}
-            style={{
-              background: orientation === 'portrait' ? '#c94f00' : 'transparent',
-              color: orientation === 'portrait' ? '#ffffff' : '#1a1209',
-            }}
           >
-            📱 9:16 Portrait
+            9:16 Portrait
           </button>
           <button
             onClick={() => setOrientation('landscape')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-              orientation === 'landscape' ? 'shadow-sm text-white' : 'hover:opacity-75'
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              orientation === 'landscape'
+                ? 'bg-white text-[#d95d39] shadow-xs font-bold'
+                : 'text-[#5a4e40] hover:text-[#1c150d]'
             }`}
-            style={{
-              background: orientation === 'landscape' ? '#c94f00' : 'transparent',
-              color: orientation === 'landscape' ? '#ffffff' : '#1a1209',
-            }}
           >
-            🖥️ 16:9 Landscape
+            16:9 Landscape
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5">
           <button
             onClick={handleLoadDemoSong}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1.5"
-            style={{ background: '#e8dcc8', borderColor: 'rgba(26,18,9,0.22)', color: '#1a1209' }}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+            style={{
+              background: '#fdfbf7',
+              borderColor: 'rgba(28,21,13,0.16)',
+              color: '#1c150d',
+            }}
           >
-            <Music className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />
-            Load "Better on My Own"
+            <Music className="w-3.5 h-3.5" style={{ color: '#d95d39' }} />
+            <span>Load Demo Track</span>
           </button>
+
           <button
             onClick={handleExportVideo}
             disabled={isExporting}
-            className="px-4 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-2 disabled:opacity-50 transition-all"
-            style={{ background: '#c94f00', boxShadow: '0 4px 14px rgba(201,79,0,0.3)' }}
+            className="px-4 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer shadow-xs hover:opacity-95"
+            style={{ background: '#d95d39' }}
           >
             {isExporting ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Rendering ({exportProgress}%)...
+                <span>Rendering ({exportProgress}%)...</span>
               </>
             ) : (
               <>
                 <Film className="w-3.5 h-3.5" />
-                Export {orientation === 'portrait' ? '9:16' : '16:9'} Video
+                <span>Export {orientation === 'portrait' ? '9:16' : '16:9'} MP4</span>
               </>
             )}
           </button>
         </div>
       </div>
+
+      {/* ── EXPORT PROGRESS MODAL ────────────────────────────────────────── */}
+      {isExporting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 select-none">
+          <div
+            className="w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl"
+            style={{
+              background: '#fcf9f2',
+              borderColor: 'rgba(28,21,13,0.18)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs"
+                  style={{ background: '#d95d39' }}
+                >
+                  <Film className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#1c150d]">
+                    Rendering & Exporting Video
+                  </h3>
+                  <p className="text-[11px] text-[#7a6e60]">
+                    {orientation === 'portrait' ? '9:16 Portrait (1080×1920)' : '16:9 Landscape (1920×1080)'} · 60fps
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl font-mono font-extrabold text-[#d95d39]">
+                {exportProgress}%
+              </span>
+            </div>
+
+            {/* Progress Track & Fill */}
+            <div
+              className="w-full h-3.5 rounded-full overflow-hidden border p-0.5"
+              style={{ background: '#eee5d5', borderColor: 'rgba(28,21,13,0.14)' }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-200"
+                style={{
+                  width: `${exportProgress}%`,
+                  background: 'linear-gradient(90deg, #d95d39, #ea7a58)',
+                }}
+              />
+            </div>
+
+            {/* Status Line */}
+            <div className="flex items-center justify-between text-xs font-mono text-[#7a6e60]">
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#d95d39]" />
+                {exportProgress >= 98
+                  ? 'Assembling MP4 file & downloading...'
+                  : 'Recording frames & audio in silent mode...'}
+              </span>
+              <span>
+                {currentTime.toFixed(1)}s / {duration.toFixed(1)}s
+              </span>
+            </div>
+
+            {/* Cancel Action */}
+            <div className="pt-2 border-t flex justify-end" style={{ borderColor: 'rgba(28,21,13,0.08)' }}>
+              <button
+                onClick={() => {
+                  if (exportCancelRef.current) exportCancelRef.current();
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition hover:bg-black/5 cursor-pointer text-[#7a6e60]"
+                style={{ borderColor: 'rgba(28,21,13,0.18)', background: '#f5eee0' }}
+              >
+                Cancel Export
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── HIDDEN AUDIO ────────────────────────────────────────────────────── */}
       <audio

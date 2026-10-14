@@ -1,19 +1,17 @@
 import { GraphicContext } from '../types';
 
-export const renderButterfly = (ctx: GraphicContext) => {
-  const { c, W, H, t, isLandscape } = ctx;
+export const drawButterflyAt = (
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  t: number,
+  scale: number = 1
+) => {
   c.save();
+  c.translate(x, y);
+  c.scale(scale, scale);
 
-  // Floating flutter position near upper-left or center
-  const baseX = isLandscape ? W * 0.22 : W * 0.28;
-  const baseY = isLandscape ? H * 0.24 : H * 0.20;
-
-  // Gentle hovering flight path
-  const flyX = baseX + Math.sin(t * 1.8) * 35;
-  const flyY = baseY + Math.cos(t * 2.2) * 22;
-  const flightAngle = Math.sin(t * 1.8) * 0.25;
-
-  c.translate(flyX, flyY);
+  const flightAngle = Math.sin(t * 1.8) * 0.2;
   c.rotate(flightAngle);
 
   // Rapid wing flapping
@@ -45,7 +43,7 @@ export const renderButterfly = (ctx: GraphicContext) => {
     c.scale(side * Math.abs(wingFlap), 1);
 
     // Forewing
-    c.fillStyle = 'rgba(214, 115, 96, 0.85)';
+    c.fillStyle = 'rgba(214, 115, 96, 0.88)';
     c.strokeStyle = 'rgba(38, 28, 20, 0.7)';
     c.lineWidth = 1.2;
     c.beginPath();
@@ -57,7 +55,7 @@ export const renderButterfly = (ctx: GraphicContext) => {
     c.stroke();
 
     // Forewing inner vein art
-    c.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    c.strokeStyle = 'rgba(255, 255, 255, 0.55)';
     c.lineWidth = 1;
     c.beginPath();
     c.moveTo(0, -2);
@@ -65,7 +63,7 @@ export const renderButterfly = (ctx: GraphicContext) => {
     c.stroke();
 
     // Hindwing
-    c.fillStyle = 'rgba(235, 160, 140, 0.8)';
+    c.fillStyle = 'rgba(235, 160, 140, 0.85)';
     c.strokeStyle = 'rgba(38, 28, 20, 0.7)';
     c.lineWidth = 1.2;
     c.beginPath();
@@ -81,6 +79,16 @@ export const renderButterfly = (ctx: GraphicContext) => {
 
   drawWingPair(1);
   drawWingPair(-1);
-
   c.restore();
+};
+
+export const renderButterfly = (ctx: GraphicContext) => {
+  const { c, W, H, t, isLandscape } = ctx;
+  const baseX = isLandscape ? W * 0.22 : W * 0.28;
+  const baseY = isLandscape ? H * 0.24 : H * 0.20;
+
+  const flyX = baseX + Math.sin(t * 1.8) * 35;
+  const flyY = baseY + Math.cos(t * 2.2) * 22;
+
+  drawButterflyAt(c, flyX, flyY, t, 1);
 };
