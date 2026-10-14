@@ -549,7 +549,7 @@ export const ShortsStudio: React.FC = () => {
                   ? 'bg-white text-[#d95d39] shadow-xs font-bold'
                   : 'text-[#5a4e40] hover:text-[#1c150d]'
               }`}
-              title="Better on My Own (English Demo)"
+              title="Demo 1: Better on My Own (English Pop)"
             >
               <Music className="w-3.5 h-3.5" />
               <span>Demo 1</span>
@@ -561,10 +561,10 @@ export const ShortsStudio: React.FC = () => {
                   ? 'bg-white text-[#d95d39] shadow-xs font-bold'
                   : 'text-[#5a4e40] hover:text-[#1c150d]'
               }`}
-              title="Kaash Tu Yahin Hoti (Hindi Acoustic Demo 🇮🇳)"
+              title="Demo 2: Kaash Tu Yahin Hoti (Hindi Acoustic 🇮🇳)"
             >
               <span className="text-[12px] leading-none">🇮🇳</span>
-              <span>Kaash Tu Yahin Hoti</span>
+              <span>Demo 2</span>
             </button>
           </div>
 
