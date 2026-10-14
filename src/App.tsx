@@ -9,10 +9,12 @@ import { Timeline } from './components/timeline/Timeline';
 import { ExportModal } from './components/modals/ExportModal';
 import { MediaUploadModal } from './components/modals/MediaUploadModal';
 import { NewProjectModal } from './components/modals/NewProjectModal';
+import { ShortsStudio } from './components/studio/ShortsStudio';
 
 export const App: React.FC = () => {
   const store = useProjectState();
   useTheme();
+  const [studioMode, setStudioMode] = useState<'shorts' | 'recipe'>('shorts');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isMediaUploadModalOpen, setIsMediaUploadModalOpen] = useState(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -59,8 +61,38 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [store]);
 
+  if (studioMode === 'shorts') {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-slate-950 text-white overflow-hidden">
+        {/* Mode Switcher Banner */}
+        <div className="h-7 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-4 text-[11px] font-mono shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-slate-300 font-semibold">Active Mode: Aesthetic Kinetic Shorts Studio (9:16)</span>
+          </div>
+          <button
+            onClick={() => setStudioMode('recipe')}
+            className="text-slate-400 hover:text-white hover:underline transition-colors flex items-center gap-1"
+          >
+            Switch to Advanced Multi-Track RecipeCut Editor ➔
+          </button>
+        </div>
+        <ShortsStudio />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden font-sans select-none">
+      <div className="h-7 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 text-[11px] font-mono shrink-0">
+        <span className="text-slate-400">RecipeCut Editor Mode</span>
+        <button
+          onClick={() => setStudioMode('shorts')}
+          className="text-orange-400 hover:text-orange-300 font-bold hover:underline transition-colors flex items-center gap-1"
+        >
+          ⚡ Switch to Kinetic Shorts Studio ➔
+        </button>
+      </div>
       {/* ── 1. Slim Top Navigation Bar ──────────────────────────────── */}
       <TopBar
         recipe={store.recipe}
