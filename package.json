@@ -1,7 +1,8 @@
 {
-  "name": "recipecut",
+  "name": "kinetype-studio",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Open-Source Kinetic Typography & Motion-as-Code Video Studio Engine",
   "type": "module",
   "scripts": {
     "dev": "vite",
