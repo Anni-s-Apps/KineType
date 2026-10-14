@@ -8,7 +8,7 @@ import {
   Zap,
   Loader2,
   Check,
-  RotateCcw,
+  Plus,
 } from 'lucide-react';
 import { MOTION_STYLES } from '../styles';
 import { GRAPHIC_OPTIONS } from '../graphics';
@@ -75,186 +75,164 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
     <div
       className="flex flex-row shrink-0 h-full select-none border-r"
       style={{
-        background: '#ece3ca',
-        borderColor: 'rgba(26,18,9,0.22)',
+        background: '#f4ede0',
+        borderColor: 'rgba(28,21,13,0.12)',
       }}
     >
-      {/* ── 1. BOOKBINDER SPINE / VERTICAL INDEX TABS ────────────────────── */}
+      {/* ── 1. SOFT SANDY ICON RAIL ───────────────────────────────────────── */}
       <div
-        className="flex flex-col items-center justify-between py-4 border-r shrink-0"
+        className="flex flex-col items-center py-4 px-2 border-r shrink-0 gap-2.5"
         style={{
-          width: '54px',
-          background: '#e3d7bb',
-          borderColor: 'rgba(26,18,9,0.20)',
+          width: '64px',
+          background: '#ece3cf',
+          borderColor: 'rgba(28,21,13,0.12)',
         }}
       >
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Top Logo Monogram */}
-          <div
-            className="w-8 h-8 rounded-sm border flex items-center justify-center font-mono font-black text-xs tracking-tighter mb-2"
-            style={{
-              borderColor: 'rgba(26,18,9,0.3)',
-              background: '#f4eedb',
-              color: '#c94f00',
-            }}
-          >
-            §M
-          </div>
+        {/* Motifs Tab */}
+        <button
+          onClick={() => setActiveTab('graphics')}
+          className={`w-11 h-12 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer relative ${
+            activeTab === 'graphics' ? 'shadow-sm' : 'hover:bg-black/5 opacity-80 hover:opacity-100'
+          }`}
+          style={{
+            background: activeTab === 'graphics' ? '#d95d39' : 'transparent',
+            color: activeTab === 'graphics' ? '#ffffff' : '#4a3f31',
+          }}
+          title="Decorative Overlays & Motifs"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-[9px] font-semibold tracking-tight mt-0.5">Motifs</span>
+          {activeGraphics.length > 0 && (
+            <span
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8.5px] font-bold flex items-center justify-center shadow-xs"
+              style={{
+                background: activeTab === 'graphics' ? '#1c150d' : '#d95d39',
+                color: '#ffffff',
+              }}
+            >
+              {activeGraphics.length}
+            </span>
+          )}
+        </button>
 
-          {/* Tab 1: Motifs / Graphics */}
-          <button
-            onClick={() => setActiveTab('graphics')}
-            className="w-9 h-11 flex flex-col items-center justify-center border transition relative cursor-pointer"
-            style={{
-              borderColor: activeTab === 'graphics' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-              background: activeTab === 'graphics' ? '#c94f00' : '#ece3ca',
-              color: activeTab === 'graphics' ? '#fff' : '#4a3d2e',
-              boxShadow: activeTab === 'graphics' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
-            }}
-            title="Aesthetic Motifs & Overlays"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">MOTIF</span>
-            {activeGraphics.length > 0 && (
-              <span
-                className="absolute -top-1 -right-1 text-[7.5px] font-mono font-bold px-1 border"
-                style={{
-                  background: '#1a1209',
-                  color: '#ffffff',
-                  borderColor: '#e3d7bb',
-                }}
-              >
-                {activeGraphics.length}
-              </span>
-            )}
-          </button>
+        {/* Styles Tab */}
+        <button
+          onClick={() => setActiveTab('styles')}
+          className={`w-11 h-12 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+            activeTab === 'styles' ? 'shadow-sm' : 'hover:bg-black/5 opacity-80 hover:opacity-100'
+          }`}
+          style={{
+            background: activeTab === 'styles' ? '#d95d39' : 'transparent',
+            color: activeTab === 'styles' ? '#ffffff' : '#4a3f31',
+          }}
+          title="Kinetic Typography Styles"
+        >
+          <Layers className="w-4 h-4" />
+          <span className="text-[9px] font-semibold tracking-tight mt-0.5">Styles</span>
+        </button>
 
-          {/* Tab 2: Typography / Motion */}
-          <button
-            onClick={() => setActiveTab('styles')}
-            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
-            style={{
-              borderColor: activeTab === 'styles' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-              background: activeTab === 'styles' ? '#c94f00' : '#ece3ca',
-              color: activeTab === 'styles' ? '#fff' : '#4a3d2e',
-              boxShadow: activeTab === 'styles' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
-            }}
-            title="Kinetic Motion Typography"
-          >
-            <Layers className="w-4 h-4" />
-            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">TYPE</span>
-          </button>
+        {/* Audio Tab */}
+        <button
+          onClick={() => setActiveTab('audio')}
+          className={`w-11 h-12 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+            activeTab === 'audio' ? 'shadow-sm' : 'hover:bg-black/5 opacity-80 hover:opacity-100'
+          }`}
+          style={{
+            background: activeTab === 'audio' ? '#d95d39' : 'transparent',
+            color: activeTab === 'audio' ? '#ffffff' : '#4a3f31',
+          }}
+          title="Audio Track & Sync"
+        >
+          <Music className="w-4 h-4" />
+          <span className="text-[9px] font-semibold tracking-tight mt-0.5">Audio</span>
+        </button>
 
-          {/* Tab 3: Audio & Sync */}
-          <button
-            onClick={() => setActiveTab('audio')}
-            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
-            style={{
-              borderColor: activeTab === 'audio' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-              background: activeTab === 'audio' ? '#c94f00' : '#ece3ca',
-              color: activeTab === 'audio' ? '#fff' : '#4a3d2e',
-              boxShadow: activeTab === 'audio' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
-            }}
-            title="Audio Track & Syllables"
-          >
-            <Music className="w-4 h-4" />
-            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">TRACK</span>
-          </button>
-
-          {/* Tab 4: Format & Canvas */}
-          <button
-            onClick={() => setActiveTab('canvas')}
-            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
-            style={{
-              borderColor: activeTab === 'canvas' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-              background: activeTab === 'canvas' ? '#c94f00' : '#ece3ca',
-              color: activeTab === 'canvas' ? '#fff' : '#4a3d2e',
-              boxShadow: activeTab === 'canvas' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
-            }}
-            title="Drafting & Format"
-          >
-            <Sliders className="w-4 h-4" />
-            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">FMT</span>
-          </button>
-        </div>
-
-        {/* Bottom Spine Catalog Mark */}
-        <div className="rotate-180 writing-vertical-lr text-[8px] font-mono tracking-widest uppercase opacity-40 text-[#1a1209]">
-          ATELIER · 2026
-        </div>
+        {/* Format Tab */}
+        <button
+          onClick={() => setActiveTab('canvas')}
+          className={`w-11 h-12 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+            activeTab === 'canvas' ? 'shadow-sm' : 'hover:bg-black/5 opacity-80 hover:opacity-100'
+          }`}
+          style={{
+            background: activeTab === 'canvas' ? '#d95d39' : 'transparent',
+            color: activeTab === 'canvas' ? '#ffffff' : '#4a3f31',
+          }}
+          title="Canvas & Format"
+        >
+          <Sliders className="w-4 h-4" />
+          <span className="text-[9px] font-semibold tracking-tight mt-0.5">Format</span>
+        </button>
       </div>
 
-      {/* ── 2. EDITORIAL SPECIMEN DRAWER PANEL ───────────────────────────── */}
+      {/* ── 2. SOFT SANDY DRAWER PANEL ────────────────────────────────────── */}
       <div
         className="flex flex-col shrink-0 h-full overflow-hidden"
         style={{
-          width: '395px',
-          background: '#ede4cb',
+          width: '390px',
+          background: '#f6f0e4',
         }}
       >
         {/* ══ TAB 1: GRAPHICS & BOTANICAL MOTIFS ═══════════════════════════ */}
         {activeTab === 'graphics' && (
           <div className="flex flex-col h-full overflow-hidden">
-            {/* Header Plate */}
+            {/* Header */}
             <div
-              className="p-3.5 border-b flex items-center justify-between shrink-0"
+              className="p-4 border-b flex items-center justify-between shrink-0"
               style={{
-                borderColor: 'rgba(26,18,9,0.18)',
-                background: '#e6dac0',
+                borderColor: 'rgba(28,21,13,0.10)',
+                background: '#eee5d5',
               }}
             >
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
-                    PLATE · COLLECTION
-                  </span>
-                  <span className="text-[8px] font-mono opacity-50">§ 01</span>
-                </div>
-                <h3
-                  className="text-sm font-bold tracking-tight mt-0.5"
-                  style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
-                >
-                  Visual Motifs & Botanical Slides
+                <h3 className="text-sm font-bold text-[#1c150d] tracking-tight">
+                  Visual Motifs & Elements
                 </h3>
+                <p className="text-[11px] text-[#7a6e60]">
+                  Click to add decoration onto video canvas
+                </p>
               </div>
 
-              <div className="text-right">
-                <span
-                  className="text-[9px] font-mono font-bold px-2 py-0.5 border"
-                  style={{
-                    borderColor: '#c94f00',
-                    background: 'rgba(201,79,0,0.12)',
-                    color: '#c94f00',
-                  }}
-                >
-                  {activeGraphics.length} MOUNTED
-                </span>
-              </div>
+              <span
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
+                style={{
+                  background: 'rgba(217,93,57,0.12)',
+                  borderColor: 'rgba(217,93,57,0.35)',
+                  color: '#d95d39',
+                }}
+              >
+                {activeGraphics.length} Active
+              </span>
             </div>
 
-            {/* Filter & Action Bar */}
+            {/* Filter Pills & Actions */}
             <div
-              className="px-3 py-2 border-b flex items-center justify-between gap-1 text-[9px] font-mono uppercase shrink-0"
+              className="px-3.5 py-2.5 border-b flex items-center justify-between gap-1 shrink-0"
               style={{
-                borderColor: 'rgba(26,18,9,0.14)',
-                background: '#ece2c6',
+                borderColor: 'rgba(28,21,13,0.08)',
+                background: '#f2eae0',
               }}
             >
-              {/* Category Pills */}
-              <div className="flex gap-1">
+              {/* Filter */}
+              <div
+                className="flex gap-1 p-0.5 rounded-lg border"
+                style={{
+                  background: 'rgba(28,21,13,0.05)',
+                  borderColor: 'rgba(28,21,13,0.08)',
+                }}
+              >
                 {[
-                  { id: 'all', label: 'ALL' },
-                  { id: 'nature', label: 'BOTANICA' },
-                  { id: 'cinematic', label: 'OPTICA' },
+                  { id: 'all', label: 'All' },
+                  { id: 'nature', label: 'Nature' },
+                  { id: 'cinematic', label: 'Cinema' },
                 ].map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setGraphicFilter(cat.id as any)}
-                    className="px-2 py-0.5 border transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer"
                     style={{
-                      borderColor: graphicFilter === cat.id ? '#c94f00' : 'rgba(26,18,9,0.18)',
-                      background: graphicFilter === cat.id ? '#c94f00' : '#f4eedb',
-                      color: graphicFilter === cat.id ? '#ffffff' : '#574836',
+                      background: graphicFilter === cat.id ? '#ffffff' : 'transparent',
+                      color: graphicFilter === cat.id ? '#d95d39' : '#6b5e50',
+                      boxShadow: graphicFilter === cat.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
                     {cat.label}
@@ -263,37 +241,34 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </div>
 
               {/* Fast Presets */}
-              <div className="flex gap-1">
+              <div className="flex gap-1.5 text-[10.5px]">
                 <button
                   onClick={() => setActiveGraphics(['tree', 'floral', 'petals'])}
-                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer font-bold"
-                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb', color: '#1a1209' }}
-                  title="Mount Tree, Floral Vine & Falling Petals"
+                  className="px-2.5 py-1 rounded-md font-semibold border transition hover:opacity-90 cursor-pointer"
+                  style={{
+                    background: '#fdfbf7',
+                    borderColor: 'rgba(28,21,13,0.16)',
+                    color: '#1c150d',
+                  }}
                 >
-                  NATURE
-                </button>
-                <button
-                  onClick={() => setActiveGraphics(['corners', 'particles', 'stars'])}
-                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer"
-                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb', color: '#574836' }}
-                  title="Mount Viewfinder & Warm Dust"
-                >
-                  OPTIC
+                  Nature
                 </button>
                 <button
                   onClick={() => setActiveGraphics([])}
-                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer text-[#8a7a66]"
-                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb' }}
-                  title="Clear All Overlays"
+                  className="px-2.5 py-1 rounded-md font-semibold border transition hover:opacity-90 cursor-pointer text-[#8c7e6e]"
+                  style={{
+                    background: '#fdfbf7',
+                    borderColor: 'rgba(28,21,13,0.16)',
+                  }}
                 >
-                  CLEAR
+                  Clear
                 </button>
               </div>
             </div>
 
-            {/* 3-COLUMN ARCHIVAL SPECIMEN SLIDE GRID */}
-            <div className="flex-1 p-2.5 overflow-y-auto [scrollbar-width:thin]">
-              <div className="grid grid-cols-3 gap-2">
+            {/* 3-COLUMN SOFT ROUNDED GRID */}
+            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:thin]">
+              <div className="grid grid-cols-3 gap-2.5">
                 {GRAPHIC_OPTIONS.filter(g =>
                   graphicFilter === 'all' ? true : g.category === graphicFilter
                 ).map(g => {
@@ -302,69 +277,49 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     <button
                       key={g.id}
                       onClick={() => toggleGraphic(g.id)}
-                      className="group flex flex-col border transition text-left cursor-pointer overflow-hidden relative"
+                      className="group flex flex-col rounded-xl border transition-all text-left cursor-pointer overflow-hidden relative shadow-xs hover:shadow-sm"
                       style={{
-                        borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.22)',
-                        background: isActive ? '#fcf8ec' : '#f5edd9',
-                        boxShadow: isActive ? '0 0 0 1px #c94f00 inset, 0 3px 10px rgba(201,79,0,0.12)' : 'none',
+                        borderColor: isActive ? '#d95d39' : 'rgba(28,21,13,0.14)',
+                        background: isActive ? '#fffaf4' : '#fdfbf7',
+                        boxShadow: isActive ? '0 0 0 1.5px #d95d39' : '0 1px 3px rgba(0,0,0,0.04)',
                       }}
                     >
-                      {/* Top Specimen Header Tag */}
+                      {/* Thumbnail Container (Auto-Fit Live Preview) */}
                       <div
-                        className="px-1.5 py-0.5 border-b flex items-center justify-between text-[7.5px] font-mono tracking-tight"
-                        style={{
-                          borderColor: 'rgba(26,18,9,0.12)',
-                          background: isActive ? '#f7efe0' : 'rgba(26,18,9,0.04)',
-                          color: isActive ? '#c94f00' : '#6b5c49',
-                        }}
-                      >
-                        <span className="font-bold">{g.index}</span>
-                        <span className="uppercase font-semibold tracking-tighter">
-                          {isActive ? '✓ MOUNT' : '+ ADD'}
-                        </span>
-                      </div>
-
-                      {/* Live Actual Miniature Illustration Canvas */}
-                      <div
-                        className="w-full aspect-square relative border-b overflow-hidden"
-                        style={{ borderColor: 'rgba(26,18,9,0.12)' }}
+                        className="w-full aspect-square relative border-b overflow-hidden rounded-t-xl bg-[#f8f4ec]"
+                        style={{ borderColor: 'rgba(28,21,13,0.08)' }}
                       >
                         <GraphicThumbnail id={g.id} />
 
-                        {/* Stamp Overlay */}
+                        {/* Soft Pill Badge */}
                         <div
-                          className="absolute bottom-1 right-1 font-mono text-[7px] px-1 border tracking-tight font-bold"
+                          className="absolute top-1.5 right-1.5 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-xs transition"
                           style={{
-                            background: isActive ? '#c94f00' : 'rgba(237,228,203,0.92)',
-                            color: isActive ? '#ffffff' : '#6b5c46',
-                            borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.25)',
+                            background: isActive ? '#d95d39' : 'rgba(255,255,255,0.85)',
+                            color: isActive ? '#ffffff' : '#6b5e50',
                           }}
                         >
-                          {isActive ? 'ON' : 'OFF'}
+                          {isActive ? (
+                            <>
+                              <Check className="w-2.5 h-2.5" /> Added
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-2.5 h-2.5" /> Add
+                            </>
+                          )}
                         </div>
                       </div>
 
-                      {/* Title & Classification Plate */}
-                      <div className="p-1.5 flex flex-col justify-between flex-1">
-                        <div>
-                          <div
-                            className="text-[9.5px] font-mono font-bold truncate leading-tight"
-                            style={{ color: isActive ? '#c94f00' : '#1a1209' }}
-                          >
-                            {g.label}
-                          </div>
-                          <div
-                            className="text-[8px] italic truncate leading-none mt-0.5 opacity-70"
-                            style={{
-                              fontFamily: '"Cormorant Garamond", Georgia, serif',
-                              color: '#1a1209',
-                            }}
-                          >
-                            {g.sublabel}
-                          </div>
+                      {/* Info Text */}
+                      <div className="p-2 flex flex-col justify-between flex-1">
+                        <div
+                          className="text-[11px] font-bold truncate leading-tight"
+                          style={{ color: isActive ? '#d95d39' : '#1c150d' }}
+                        >
+                          {g.label}
                         </div>
-
-                        <div className="text-[7.5px] font-sans truncate mt-1 text-[#7a6c58] leading-tight">
+                        <div className="text-[9px] truncate mt-0.5 text-[#857767] leading-tight">
                           {g.desc}
                         </div>
                       </div>
@@ -380,70 +335,63 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {activeTab === 'styles' && (
           <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3.5 border-b flex items-center justify-between shrink-0"
+              className="p-4 border-b flex items-center justify-between shrink-0"
               style={{
-                borderColor: 'rgba(26,18,9,0.18)',
-                background: '#e6dac0',
+                borderColor: 'rgba(28,21,13,0.10)',
+                background: '#eee5d5',
               }}
             >
               <div>
-                <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
-                  TYPE ENGINES
-                </span>
-                <h3
-                  className="text-sm font-bold tracking-tight mt-0.5"
-                  style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
-                >
-                  Kinetic Typography Plates
+                <h3 className="text-sm font-bold text-[#1c150d] tracking-tight">
+                  Kinetic Typography
                 </h3>
+                <p className="text-[11px] text-[#7a6e60]">
+                  Word-synced kinetic animation engines
+                </p>
               </div>
               <span
-                className="text-[9px] font-mono font-bold px-2 py-0.5 border"
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full border uppercase"
                 style={{
-                  borderColor: '#c94f00',
-                  background: 'rgba(201,79,0,0.12)',
-                  color: '#c94f00',
+                  background: 'rgba(217,93,57,0.12)',
+                  borderColor: 'rgba(217,93,57,0.35)',
+                  color: '#d95d39',
                 }}
               >
-                {motionStyle.toUpperCase()}
+                {motionStyle}
               </span>
             </div>
 
-            <div className="flex-1 p-3 space-y-2 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-3.5 space-y-2.5 overflow-y-auto [scrollbar-width:thin]">
               {MOTION_STYLES.map(s => {
                 const isSelected = motionStyle === s.id;
                 return (
                   <button
                     key={s.id}
                     onClick={() => setMotionStyle(s.id)}
-                    className="w-full p-3 border text-left transition cursor-pointer relative"
+                    className="w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer shadow-xs hover:shadow-sm"
                     style={{
-                      borderColor: isSelected ? '#c94f00' : 'rgba(26,18,9,0.22)',
-                      background: isSelected ? '#fcf9ec' : '#f5edd9',
-                      boxShadow: isSelected ? '0 0 0 1px #c94f00 inset, 0 2px 8px rgba(201,79,0,0.12)' : 'none',
+                      borderColor: isSelected ? '#d95d39' : 'rgba(28,21,13,0.14)',
+                      background: isSelected ? '#fffaf4' : '#fdfbf7',
+                      boxShadow: isSelected ? '0 0 0 1.5px #d95d39' : 'none',
                     }}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span
-                        className="text-xs font-mono font-extrabold tracking-wide"
-                        style={{ color: isSelected ? '#c94f00' : '#1a1209' }}
+                        className="text-xs font-bold tracking-wide"
+                        style={{ color: isSelected ? '#d95d39' : '#1c150d' }}
                       >
                         {s.label}
                       </span>
-                      {isSelected ? (
+                      {isSelected && (
                         <span
-                          className="text-[8px] font-mono px-1.5 py-0.5 border font-bold text-white"
-                          style={{ background: '#c94f00', borderColor: '#c94f00' }}
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
+                          style={{ background: '#d95d39' }}
                         >
                           ACTIVE
                         </span>
-                      ) : (
-                        <span className="text-[8px] font-mono text-[#8a7a66]">SELECT</span>
                       )}
                     </div>
-                    <p className="text-[10.5px] font-sans" style={{ color: '#635543' }}>
-                      {s.desc}
-                    </p>
+                    <p className="text-[11px] text-[#7a6e60]">{s.desc}</p>
                   </button>
                 );
               })}
@@ -455,28 +403,25 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {activeTab === 'audio' && (
           <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3.5 border-b shrink-0"
+              className="p-4 border-b shrink-0"
               style={{
-                borderColor: 'rgba(26,18,9,0.18)',
-                background: '#e6dac0',
+                borderColor: 'rgba(28,21,13,0.10)',
+                background: '#eee5d5',
               }}
             >
-              <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
-                ACOUSTIC SPOOL
-              </span>
-              <h3
-                className="text-sm font-bold tracking-tight mt-0.5"
-                style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
-              >
-                Track & Whisper AI Alignment
+              <h3 className="text-sm font-bold text-[#1c150d] tracking-tight">
+                Audio Track & Lyrics
               </h3>
+              <p className="text-[11px] text-[#7a6e60]">
+                Upload track or align timestamps with Groq AI
+              </p>
             </div>
 
-            <div className="flex-1 p-3 space-y-3 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto [scrollbar-width:thin]">
               {/* Dropzone */}
               <div
-                className="border border-dashed p-4 text-center relative cursor-pointer hover:bg-black/5 transition"
-                style={{ borderColor: 'rgba(26,18,9,0.3)', background: '#f5eee0' }}
+                className="border-2 border-dashed rounded-xl p-5 text-center relative cursor-pointer hover:bg-black/5 transition"
+                style={{ borderColor: 'rgba(28,21,13,0.22)', background: '#fdfbf7' }}
               >
                 <input
                   type="file"
@@ -484,41 +429,41 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   onChange={handleAudioUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <Upload className="w-5 h-5 mx-auto mb-1.5" style={{ color: '#c94f00' }} />
-                <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
+                <Upload className="w-5 h-5 mx-auto mb-1.5" style={{ color: '#d95d39' }} />
+                <p className="text-xs font-bold text-[#1c150d]">
                   {uploadedFile ? uploadedFile.name : 'Upload Audio Track'}
                 </p>
-                <p className="text-[9.5px] font-mono mt-0.5" style={{ color: '#70624e' }}>
+                <p className="text-[10px] mt-0.5 text-[#7a6e60]">
                   MP3, WAV, M4A up to 25MB
                 </p>
               </div>
 
               {uploadedFile && (
                 <div
-                  className="p-3 border space-y-2"
-                  style={{ borderColor: 'rgba(26,18,9,0.2)', background: '#f4ebd5' }}
+                  className="p-3.5 rounded-xl border space-y-2.5"
+                  style={{ borderColor: 'rgba(28,21,13,0.16)', background: '#fdfbf7' }}
                 >
-                  <label className="text-[10px] font-mono font-bold block" style={{ color: '#1a1209' }}>
-                    GROQ API KEY (WHISPER AI):
+                  <label className="text-[11px] font-bold block text-[#1c150d]">
+                    Groq API Key (Whisper AI):
                   </label>
                   <input
                     type="password"
                     value={groqKey}
                     onChange={e => setGroqKey(e.target.value)}
                     placeholder="gsk_..."
-                    className="w-full text-xs border px-2 py-1.5 font-mono"
-                    style={{ background: '#fbf8f0', borderColor: 'rgba(26,18,9,0.3)', color: '#1a1209' }}
+                    className="w-full text-xs border rounded-lg px-2.5 py-1.5 font-mono"
+                    style={{ background: '#fcfaf6', borderColor: 'rgba(28,21,13,0.22)', color: '#1c150d' }}
                   />
                   <button
                     onClick={handleRunTranscription}
                     disabled={isTranscribing}
-                    className="w-full py-1.5 border text-xs font-mono font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                    style={{ background: '#c94f00', borderColor: '#a63f00' }}
+                    className="w-full py-2 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    style={{ background: '#d95d39' }}
                   >
                     {isTranscribing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        {transcribeStatus || 'Aligning timestamps...'}
+                        {transcribeStatus || 'Transcribing...'}
                       </>
                     ) : (
                       <>
@@ -532,21 +477,21 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
               {/* Track Metadata Card */}
               <div
-                className="p-3 border font-mono"
-                style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f8f3e5' }}
+                className="p-3.5 rounded-xl border"
+                style={{ borderColor: 'rgba(28,21,13,0.14)', background: '#fdfbf7' }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[8px] text-[#70624e] tracking-widest uppercase">TRACK SPOOL</span>
-                  <span className="text-[9px] font-bold text-[#c94f00]">
+                  <span className="text-[9px] font-mono text-[#7a6e60] tracking-wider uppercase">Current Track</span>
+                  <span className="text-[10px] font-mono font-bold text-[#d95d39]">
                     {Math.floor(duration / 60)}:{(Math.floor(duration % 60) + '').padStart(2, '0')}
                   </span>
                 </div>
-                <div className="font-bold truncate text-xs" style={{ color: '#1a1209' }}>
+                <div className="font-bold truncate text-xs text-[#1c150d]">
                   {songTitle}
                 </div>
-                <div className="text-[9.5px] mt-2 pt-2 border-t flex justify-between text-[#70624e]" style={{ borderColor: 'rgba(26,18,9,0.1)' }}>
+                <div className="text-[10px] mt-2 pt-2 border-t flex justify-between text-[#7a6e60]" style={{ borderColor: 'rgba(28,21,13,0.08)' }}>
                   <span>{wordsCount} timed words</span>
-                  <span>{linesCount} verses</span>
+                  <span>{linesCount} lines</span>
                 </div>
               </div>
             </div>
@@ -557,59 +502,55 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
         {activeTab === 'canvas' && (
           <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3.5 border-b shrink-0"
+              className="p-4 border-b shrink-0"
               style={{
-                borderColor: 'rgba(26,18,9,0.18)',
-                background: '#e6dac0',
+                borderColor: 'rgba(28,21,13,0.10)',
+                background: '#eee5d5',
               }}
             >
-              <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
-                DRAFTING RATIO
-              </span>
-              <h3
-                className="text-sm font-bold tracking-tight mt-0.5"
-                style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
-              >
-                Orientation & Typography Scale
+              <h3 className="text-sm font-bold text-[#1c150d] tracking-tight">
+                Canvas & Format
               </h3>
+              <p className="text-[11px] text-[#7a6e60]">
+                Orientation and font scale controls
+              </p>
             </div>
 
-            <div className="flex-1 p-3.5 space-y-4 overflow-y-auto [scrollbar-width:thin]">
-              {/* Orientation Buttons */}
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto [scrollbar-width:thin]">
               <div>
-                <label className="text-[9px] font-mono font-bold uppercase tracking-wider block mb-1.5 text-[#70624e]">
-                  CANVAS ASPECT RATIO
+                <label className="text-[10px] font-bold uppercase tracking-wider block mb-2 text-[#7a6e60]">
+                  Video Aspect Ratio
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
                     onClick={() => setOrientation('portrait')}
-                    className="p-3 border text-left transition cursor-pointer"
+                    className="p-3 rounded-xl border text-left transition-all cursor-pointer"
                     style={{
-                      borderColor: orientation === 'portrait' ? '#c94f00' : 'rgba(26,18,9,0.22)',
-                      background: orientation === 'portrait' ? '#fcf9ec' : '#f5ecd8',
-                      boxShadow: orientation === 'portrait' ? '0 0 0 1px #c94f00 inset' : 'none',
+                      borderColor: orientation === 'portrait' ? '#d95d39' : 'rgba(28,21,13,0.15)',
+                      background: orientation === 'portrait' ? '#fffaf4' : '#fdfbf7',
+                      boxShadow: orientation === 'portrait' ? '0 0 0 1.5px #d95d39' : 'none',
                     }}
                   >
-                    <div className="text-xs font-mono font-bold" style={{ color: orientation === 'portrait' ? '#c94f00' : '#1a1209' }}>
+                    <div className="text-xs font-bold" style={{ color: orientation === 'portrait' ? '#d95d39' : '#1c150d' }}>
                       9:16 Portrait
                     </div>
-                    <div className="text-[9px] font-sans mt-0.5 text-[#70624e]">
+                    <div className="text-[10px] mt-0.5 text-[#7a6e60]">
                       Shorts & Reels
                     </div>
                   </button>
                   <button
                     onClick={() => setOrientation('landscape')}
-                    className="p-3 border text-left transition cursor-pointer"
+                    className="p-3 rounded-xl border text-left transition-all cursor-pointer"
                     style={{
-                      borderColor: orientation === 'landscape' ? '#c94f00' : 'rgba(26,18,9,0.22)',
-                      background: orientation === 'landscape' ? '#fcf9ec' : '#f5ecd8',
-                      boxShadow: orientation === 'landscape' ? '0 0 0 1px #c94f00 inset' : 'none',
+                      borderColor: orientation === 'landscape' ? '#d95d39' : 'rgba(28,21,13,0.15)',
+                      background: orientation === 'landscape' ? '#fffaf4' : '#fdfbf7',
+                      boxShadow: orientation === 'landscape' ? '0 0 0 1.5px #d95d39' : 'none',
                     }}
                   >
-                    <div className="text-xs font-mono font-bold" style={{ color: orientation === 'landscape' ? '#c94f00' : '#1a1209' }}>
+                    <div className="text-xs font-bold" style={{ color: orientation === 'landscape' ? '#d95d39' : '#1c150d' }}>
                       16:9 Landscape
                     </div>
-                    <div className="text-[9px] font-sans mt-0.5 text-[#70624e]">
+                    <div className="text-[10px] mt-0.5 text-[#7a6e60]">
                       YouTube & Video
                     </div>
                   </button>
@@ -617,22 +558,22 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </div>
 
               {/* Typography */}
-              <div className="pt-3 border-t space-y-3" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
-                <label className="flex items-center justify-between text-xs font-mono font-bold cursor-pointer text-[#1a1209]">
-                  <span>UPPERCASE TYPOGRAPHY</span>
+              <div className="pt-3 border-t space-y-3" style={{ borderColor: 'rgba(28,21,13,0.10)' }}>
+                <label className="flex items-center justify-between text-xs font-bold cursor-pointer text-[#1c150d]">
+                  <span>UPPERCASE Typography</span>
                   <input
                     type="checkbox"
                     checked={uppercase}
                     onChange={e => setUppercase(e.target.checked)}
-                    className="w-4 h-4 cursor-pointer"
-                    style={{ accentColor: '#c94f00' }}
+                    className="w-4 h-4 rounded cursor-pointer"
+                    style={{ accentColor: '#d95d39' }}
                   />
                 </label>
 
                 <div>
-                  <div className="flex justify-between text-xs font-mono font-bold mb-1.5 text-[#70624e]">
-                    <span>FONT SCALE</span>
-                    <span style={{ color: '#c94f00' }}>{fontSize}px</span>
+                  <div className="flex justify-between text-xs font-bold mb-1.5 text-[#7a6e60]">
+                    <span>Word Font Size</span>
+                    <span className="font-mono" style={{ color: '#d95d39' }}>{fontSize}px</span>
                   </div>
                   <input
                     type="range"
@@ -641,7 +582,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     value={fontSize}
                     onChange={e => setFontSize(Number(e.target.value))}
                     className="w-full cursor-pointer"
-                    style={{ accentColor: '#c94f00' }}
+                    style={{ accentColor: '#d95d39' }}
                   />
                 </div>
               </div>
