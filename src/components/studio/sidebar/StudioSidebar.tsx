@@ -272,7 +272,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
 
             {/* 3-COLUMN SOFT ROUNDED GRID */}
-            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="grid grid-cols-3 gap-2.5">
                 {GRAPHIC_OPTIONS.filter(g =>
                   graphicFilter === 'all' ? true : g.category === graphicFilter
@@ -367,7 +367,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
             </div>
 
             {/* 2-COLUMN STYLES GRID WITH REAL VIDEO FRAME PREVIEWS */}
-            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="grid grid-cols-2 gap-2.5">
                 {MOTION_STYLES.map(s => {
                   const isSelected = motionStyle === s.id;
@@ -482,7 +482,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </p>
             </div>
 
-            <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-3.5 space-y-3.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* Dropzone */}
               <div
                 className="border-2 border-dashed rounded-xl p-5 text-center relative cursor-pointer hover:bg-black/5 transition"
@@ -581,7 +581,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </p>
             </div>
 
-            <div className="flex-1 p-4 space-y-4 overflow-y-auto [scrollbar-width:thin]">
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-wider block mb-2 text-[#7a6e60]">
                   Video Aspect Ratio
