@@ -13,6 +13,8 @@ import {
   Loader2,
   Film,
   Zap,
+  Check,
+  Sliders,
 } from 'lucide-react';
 import defaultSongData from '../../data/defaultSong.json';
 import { transcribeWithGroq } from '../../services/transcription';
@@ -57,11 +59,12 @@ export const ShortsStudio: React.FC = () => {
   const [fontSize, setFontSize] = useState<number>(72);
   const [uppercase, setUppercase] = useState<boolean>(true);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [activeTab, setActiveTab] = useState<'graphics' | 'styles' | 'audio' | 'canvas'>('graphics');
+  const [graphicFilter, setGraphicFilter] = useState<'all' | 'nature' | 'cinematic' | 'retro'>('all');
   const [activeGraphics, setActiveGraphics] = useState<string[]>([
-    'corners',
-    'waveform',
-    'particles',
-    'stars',
+    'tree',
+    'floral',
+    'petals',
   ]);
 
   const toggleGraphic = (id: string) => {
@@ -525,220 +528,452 @@ export const ShortsStudio: React.FC = () => {
 
       {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
-        {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
+        {/* ── LEFT MULTI-PANEL NAVIGATION RAIL (PC DESKTOP) ────────────────── */}
         <div
-          className="w-88 border-r overflow-y-auto p-5 space-y-6 shrink-0 [scrollbar-width:none]"
-          style={{ borderColor: 'rgba(26,18,9,0.14)', background: '#ede4cc', width: '348px' }}
+          className="w-18 border-r flex flex-col items-center py-4 gap-3 shrink-0 select-none z-10"
+          style={{ borderColor: 'rgba(26,18,9,0.14)', background: '#e6dcbf', width: '72px' }}
         >
-          {/* 1. Audio Upload */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
-              <Upload className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />1. Audio Track
-            </h2>
-            <div
-              className="border-2 border-dashed rounded-xl p-4 text-center relative cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ borderColor: 'rgba(26,18,9,0.25)', background: 'rgba(26,18,9,0.03)' }}
-            >
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioUpload}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-              <Music className="w-5 h-5 mx-auto mb-2" style={{ color: '#7a6e5f' }} />
-              <p className="text-xs font-medium" style={{ color: '#1a1209' }}>
-                {uploadedFile ? uploadedFile.name : 'Upload Any Song / Voiceover'}
-              </p>
-              <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
-                MP3, WAV, M4A up to 25MB
-              </p>
-            </div>
-
-            {uploadedFile && (
-              <div
-                className="p-3 rounded-xl border space-y-2"
-                style={{ background: 'rgba(26,18,9,0.05)', borderColor: 'rgba(26,18,9,0.18)' }}
+          <button
+            onClick={() => setActiveTab('graphics')}
+            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer relative ${
+              activeTab === 'graphics' ? 'shadow-md scale-105' : 'hover:opacity-80'
+            }`}
+            style={{
+              background: activeTab === 'graphics' ? '#c94f00' : 'rgba(26,18,9,0.06)',
+              color: activeTab === 'graphics' ? '#ffffff' : '#574c3d',
+            }}
+            title="Decorations & Graphics"
+          >
+            <Sparkles className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] font-bold">Elements</span>
+            {activeGraphics.length > 0 && (
+              <span
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center border-2"
+                style={{
+                  background: activeTab === 'graphics' ? '#1a1209' : '#c94f00',
+                  color: '#ffffff',
+                  borderColor: '#e6dcbf',
+                }}
               >
-                <label className="text-[11px] font-medium block" style={{ color: '#1a1209' }}>
-                  Groq API Key:
-                </label>
-                <input
-                  type="password"
-                  value={groqKey}
-                  onChange={e => setGroqKey(e.target.value)}
-                  placeholder="gsk_..."
-                  className="w-full text-xs border rounded px-2.5 py-1.5 font-mono"
-                  style={{ background: '#f4edd8', borderColor: 'rgba(26,18,9,0.25)', color: '#1a1209' }}
-                />
-                <button
-                  onClick={handleRunTranscription}
-                  disabled={isTranscribing}
-                  className="w-full py-1.5 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  style={{ background: '#c94f00' }}
-                >
-                  {isTranscribing ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      {transcribeStatus || 'Transcribing...'}
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5" />
-                      Transcribe Word-by-Word
-                    </>
-                  )}
-                </button>
-              </div>
+                {activeGraphics.length}
+              </span>
             )}
-          </div>
+          </button>
 
-          {/* 2. Motion Style */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
-              <Layers className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />2. Motion Style
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              {MOTION_STYLES.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setMotionStyle(s.id)}
-                  className="p-3 rounded-xl border text-left transition-all"
-                  style={{
-                    borderColor: motionStyle === s.id ? '#c94f00' : 'rgba(26,18,9,0.18)',
-                    background: motionStyle === s.id ? 'rgba(201,79,0,0.10)' : 'rgba(26,18,9,0.03)',
-                  }}
+          <button
+            onClick={() => setActiveTab('styles')}
+            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+              activeTab === 'styles' ? 'shadow-md scale-105' : 'hover:opacity-80'
+            }`}
+            style={{
+              background: activeTab === 'styles' ? '#c94f00' : 'rgba(26,18,9,0.06)',
+              color: activeTab === 'styles' ? '#ffffff' : '#574c3d',
+            }}
+            title="Motion Typography Styles"
+          >
+            <Layers className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] font-bold">Styles</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('audio')}
+            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+              activeTab === 'audio' ? 'shadow-md scale-105' : 'hover:opacity-80'
+            }`}
+            style={{
+              background: activeTab === 'audio' ? '#c94f00' : 'rgba(26,18,9,0.06)',
+              color: activeTab === 'audio' ? '#ffffff' : '#574c3d',
+            }}
+            title="Audio & Synced Lyrics"
+          >
+            <Music className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] font-bold">Audio</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('canvas')}
+            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+              activeTab === 'canvas' ? 'shadow-md scale-105' : 'hover:opacity-80'
+            }`}
+            style={{
+              background: activeTab === 'canvas' ? '#c94f00' : 'rgba(26,18,9,0.06)',
+              color: activeTab === 'canvas' ? '#ffffff' : '#574c3d',
+            }}
+            title="Canvas & Format"
+          >
+            <Sliders className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] font-bold">Format</span>
+          </button>
+        </div>
+
+        {/* ── EXPANDED DRAWER PANEL (PC DESKTOP) ───────────────────────────── */}
+        <div
+          className="border-r overflow-y-auto p-5 shrink-0 [scrollbar-width:thin]"
+          style={{
+            borderColor: 'rgba(26,18,9,0.14)',
+            background: '#ede4cc',
+            width: '390px',
+          }}
+        >
+          {/* TAB 1: GRAPHICS & DECORATIVE ELEMENTS */}
+          {activeTab === 'graphics' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'rgba(26,18,9,0.12)' }}>
+                <div>
+                  <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: '#1a1209' }}>
+                    Decorations & Elements
+                  </h2>
+                  <p className="text-[11px]" style={{ color: '#7a6e5f' }}>
+                    Click any item to add or remove from video player
+                  </p>
+                </div>
+                <span
+                  className="text-xs font-mono px-2 py-0.5 rounded-full font-bold"
+                  style={{ background: 'rgba(201,79,0,0.14)', color: '#c94f00' }}
                 >
-                  <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
-                    {s.label}
-                  </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
-                    {s.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. Aspect Ratio / Format Selector */}
-          <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
-            <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
-              <Film className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />3. Aspect Ratio / Format
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setOrientation('portrait')}
-                className="p-3 rounded-xl border text-left transition-all"
-                style={{
-                  borderColor: orientation === 'portrait' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-                  background: orientation === 'portrait' ? 'rgba(201,79,0,0.12)' : 'rgba(26,18,9,0.03)',
-                }}
-              >
-                <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
-                  📱 9:16 Portrait
-                </p>
-                <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
-                  Shorts & Reels
-                </p>
-              </button>
-              <button
-                onClick={() => setOrientation('landscape')}
-                className="p-3 rounded-xl border text-left transition-all"
-                style={{
-                  borderColor: orientation === 'landscape' ? '#c94f00' : 'rgba(26,18,9,0.18)',
-                  background: orientation === 'landscape' ? 'rgba(201,79,0,0.12)' : 'rgba(26,18,9,0.03)',
-                }}
-              >
-                <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
-                  🖥️ 16:9 Landscape
-                </p>
-                <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
-                  YouTube & TV
-                </p>
-              </button>
-            </div>
-          </div>
-
-          {/* 4. Typography */}
-          <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
-            <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
-              <Type className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />4. Typography
-            </h2>
-            <label className="flex items-center justify-between text-xs cursor-pointer" style={{ color: '#1a1209' }}>
-              <span>UPPERCASE Words</span>
-              <input
-                type="checkbox"
-                checked={uppercase}
-                onChange={e => setUppercase(e.target.checked)}
-                className="w-4 h-4 rounded"
-                style={{ accentColor: '#c94f00' }}
-              />
-            </label>
-            <div>
-              <div className="flex justify-between text-[11px] mb-1" style={{ color: '#7a6e5f' }}>
-                <span>Word Size</span>
-                <span className="font-mono" style={{ color: '#1a1209' }}>
-                  {fontSize}px
+                  {activeGraphics.length} on canvas
                 </span>
               </div>
-              <input
-                type="range"
-                min="48"
-                max="110"
-                value={fontSize}
-                onChange={e => setFontSize(Number(e.target.value))}
-                className="w-full"
-                style={{ accentColor: '#c94f00' }}
-              />
-            </div>
-          </div>
 
-          {/* 5. Visual Graphics & Overlays */}
-          <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7a6e5f' }}>
-                <Sparkles className="w-3.5 h-3.5" style={{ color: '#c94f00' }} />5. Video Graphics & Overlays
-              </h2>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(201,79,0,0.1)', color: '#c94f00' }}>
-                {activeGraphics.length} active
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-1.5">
-              {GRAPHIC_OPTIONS.map(g => {
-                const isActive = activeGraphics.includes(g.id);
-                return (
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setActiveGraphics(['tree', 'floral', 'petals'])}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition hover:opacity-80 cursor-pointer"
+                  style={{ background: 'rgba(214,115,96,0.15)', borderColor: 'rgba(214,115,96,0.3)', color: '#1a1209' }}
+                >
+                  🌿 Nature Preset
+                </button>
+                <button
+                  onClick={() => setActiveGraphics(['corners', 'particles', 'stars'])}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition hover:opacity-80 cursor-pointer"
+                  style={{ background: 'rgba(26,18,9,0.06)', borderColor: 'rgba(26,18,9,0.15)', color: '#1a1209' }}
+                >
+                  🎬 Cinema Preset
+                </button>
+                <button
+                  onClick={() => setActiveGraphics([])}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition hover:opacity-80 cursor-pointer ml-auto"
+                  style={{ background: 'transparent', borderColor: 'rgba(26,18,9,0.18)', color: '#7a6e5f' }}
+                >
+                  Clear All
+                </button>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex gap-1.5 p-1 rounded-xl border text-xs" style={{ background: 'rgba(26,18,9,0.04)', borderColor: 'rgba(26,18,9,0.1)' }}>
+                {[
+                  { id: 'all', label: 'All Elements' },
+                  { id: 'nature', label: '🌿 Nature' },
+                  { id: 'cinematic', label: '🎬 Cinema' },
+                  { id: 'retro', label: '🎵 Retro' },
+                ].map(cat => (
                   <button
-                    key={g.id}
-                    onClick={() => toggleGraphic(g.id)}
-                    className="flex items-center justify-between p-2 rounded-lg text-left text-xs transition border cursor-pointer hover:opacity-90"
+                    key={cat.id}
+                    onClick={() => setGraphicFilter(cat.id as any)}
+                    className="flex-1 py-1 rounded-lg text-center font-medium transition cursor-pointer"
                     style={{
-                      background: isActive ? '#f5eee0' : 'rgba(245,238,224,0.3)',
-                      borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.12)',
-                      color: isActive ? '#1a1209' : '#7a6e5f',
+                      background: graphicFilter === cat.id ? '#fbf8f0' : 'transparent',
+                      color: graphicFilter === cat.id ? '#c94f00' : '#7a6e5f',
+                      boxShadow: graphicFilter === cat.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm font-mono w-4 text-center shrink-0" style={{ color: isActive ? '#c94f00' : '#7a6e5f' }}>
-                        {g.icon}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="font-semibold truncate">{g.label}</div>
-                        <div className="text-[10px] truncate opacity-70">{g.desc}</div>
-                      </div>
-                    </div>
-                    <span
-                      className="text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-2"
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 2-Column Visual Grid */}
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                {GRAPHIC_OPTIONS.filter(g =>
+                  graphicFilter === 'all'
+                    ? true
+                    : graphicFilter === 'retro'
+                    ? g.category === 'retro' || g.category === 'audio'
+                    : g.category === graphicFilter
+                ).map(g => {
+                  const isActive = activeGraphics.includes(g.id);
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() => toggleGraphic(g.id)}
+                      className="group flex flex-col justify-between p-3 rounded-2xl text-left transition-all border cursor-pointer relative overflow-hidden"
                       style={{
-                        background: isActive ? '#c94f00' : 'rgba(26,18,9,0.06)',
-                        color: isActive ? '#fff' : '#7a6e5f',
+                        background: isActive ? '#fcf9f2' : 'rgba(247,242,230,0.5)',
+                        borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.14)',
+                        boxShadow: isActive ? '0 4px 14px rgba(201,79,0,0.15)' : 'none',
                       }}
                     >
-                      {isActive ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-                );
-              })}
+                      {/* Top Row: Icon + Badge */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition group-hover:scale-110"
+                          style={{ background: g.previewBg }}
+                        >
+                          {g.icon}
+                        </div>
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition"
+                          style={{
+                            background: isActive ? '#c94f00' : 'rgba(26,18,9,0.08)',
+                            color: isActive ? '#ffffff' : '#7a6e5f',
+                          }}
+                        >
+                          {isActive ? (
+                            <>
+                              <Check className="w-3 h-3" /> Added
+                            </>
+                          ) : (
+                            '+ Add'
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Content */}
+                      <div>
+                        <div
+                          className="text-xs font-bold leading-tight"
+                          style={{ color: isActive ? '#c94f00' : '#1a1209' }}
+                        >
+                          {g.label}
+                        </div>
+                        <div
+                          className="text-[10px] line-clamp-2 mt-1 leading-normal"
+                          style={{ color: '#7a6e5f' }}
+                        >
+                          {g.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* TAB 2: MOTION STYLES */}
+          {activeTab === 'styles' && (
+            <div className="space-y-4">
+              <div className="pb-2 border-b" style={{ borderColor: 'rgba(26,18,9,0.12)' }}>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: '#1a1209' }}>
+                  Motion Typography
+                </h2>
+                <p className="text-[11px]" style={{ color: '#7a6e5f' }}>
+                  Aesthetic kinetic text animations synced to words
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {MOTION_STYLES.map(s => {
+                  const isSelected = motionStyle === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setMotionStyle(s.id)}
+                      className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative"
+                      style={{
+                        borderColor: isSelected ? '#c94f00' : 'rgba(26,18,9,0.15)',
+                        background: isSelected ? '#fcf9f2' : 'rgba(247,242,230,0.5)',
+                        boxShadow: isSelected ? '0 4px 14px rgba(201,79,0,0.14)' : 'none',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-extrabold" style={{ color: isSelected ? '#c94f00' : '#1a1209' }}>
+                          {s.label}
+                        </span>
+                        {isSelected && (
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+                            style={{ background: '#c94f00' }}
+                          >
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px]" style={{ color: '#7a6e5f' }}>
+                        {s.desc}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: AUDIO & LYRICS */}
+          {activeTab === 'audio' && (
+            <div className="space-y-4">
+              <div className="pb-2 border-b" style={{ borderColor: 'rgba(26,18,9,0.12)' }}>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: '#1a1209' }}>
+                  Audio Track & Lyrics
+                </h2>
+                <p className="text-[11px]" style={{ color: '#7a6e5f' }}>
+                  Upload any MP3 or transcribe with Groq Whisper AI
+                </p>
+              </div>
+
+              {/* Upload Dropzone */}
+              <div
+                className="border-2 border-dashed rounded-2xl p-5 text-center relative cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ borderColor: 'rgba(26,18,9,0.25)', background: 'rgba(26,18,9,0.03)' }}
+              >
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleAudioUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <Music className="w-6 h-6 mx-auto mb-2" style={{ color: '#c94f00' }} />
+                <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
+                  {uploadedFile ? uploadedFile.name : 'Upload Any Song / Voiceover'}
+                </p>
+                <p className="text-[11px] mt-1" style={{ color: '#7a6e5f' }}>
+                  MP3, WAV, M4A up to 25MB
+                </p>
+              </div>
+
+              {uploadedFile && (
+                <div
+                  className="p-3.5 rounded-2xl border space-y-2.5"
+                  style={{ background: 'rgba(26,18,9,0.05)', borderColor: 'rgba(26,18,9,0.18)' }}
+                >
+                  <label className="text-[11px] font-bold block" style={{ color: '#1a1209' }}>
+                    Groq API Key (Whisper AI):
+                  </label>
+                  <input
+                    type="password"
+                    value={groqKey}
+                    onChange={e => setGroqKey(e.target.value)}
+                    placeholder="gsk_..."
+                    className="w-full text-xs border rounded-lg px-2.5 py-1.5 font-mono"
+                    style={{ background: '#f4edd8', borderColor: 'rgba(26,18,9,0.25)', color: '#1a1209' }}
+                  />
+                  <button
+                    onClick={handleRunTranscription}
+                    disabled={isTranscribing}
+                    className="w-full py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    style={{ background: '#c94f00' }}
+                  >
+                    {isTranscribing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        {transcribeStatus || 'Transcribing Word-by-Word...'}
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5" />
+                        Transcribe Word-by-Word
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Current Track Info */}
+              <div
+                className="p-3 rounded-xl border flex items-center justify-between text-xs"
+                style={{ borderColor: 'rgba(26,18,9,0.15)', background: '#fbf8f0' }}
+              >
+                <div>
+                  <div className="font-bold truncate max-w-[220px]" style={{ color: '#1a1209' }}>
+                    {songTitle}
+                  </div>
+                  <div className="text-[10px]" style={{ color: '#7a6e5f' }}>
+                    {words.length} synced words · {lines.length} lines
+                  </div>
+                </div>
+                <span className="font-mono text-[11px] font-bold" style={{ color: '#c94f00' }}>
+                  {Math.floor(duration / 60)}:{(Math.floor(duration % 60) + '').padStart(2, '0')}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: FORMAT & CANVAS */}
+          {activeTab === 'canvas' && (
+            <div className="space-y-4">
+              <div className="pb-2 border-b" style={{ borderColor: 'rgba(26,18,9,0.12)' }}>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: '#1a1209' }}>
+                  Format & Typography
+                </h2>
+                <p className="text-[11px]" style={{ color: '#7a6e5f' }}>
+                  Switch video aspect ratio and configure text scale
+                </p>
+              </div>
+
+              {/* Aspect Ratio Switcher */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: '#7a6e5f' }}>
+                  Aspect Ratio
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setOrientation('portrait')}
+                    className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer"
+                    style={{
+                      borderColor: orientation === 'portrait' ? '#c94f00' : 'rgba(26,18,9,0.15)',
+                      background: orientation === 'portrait' ? '#fcf9f2' : 'rgba(247,242,230,0.5)',
+                      boxShadow: orientation === 'portrait' ? '0 4px 14px rgba(201,79,0,0.12)' : 'none',
+                    }}
+                  >
+                    <p className="text-xs font-extrabold" style={{ color: orientation === 'portrait' ? '#c94f00' : '#1a1209' }}>
+                      📱 9:16 Portrait
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
+                      Reels & Shorts
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => setOrientation('landscape')}
+                    className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer"
+                    style={{
+                      borderColor: orientation === 'landscape' ? '#c94f00' : 'rgba(26,18,9,0.15)',
+                      background: orientation === 'landscape' ? '#fcf9f2' : 'rgba(247,242,230,0.5)',
+                      boxShadow: orientation === 'landscape' ? '0 4px 14px rgba(201,79,0,0.12)' : 'none',
+                    }}
+                  >
+                    <p className="text-xs font-extrabold" style={{ color: orientation === 'landscape' ? '#c94f00' : '#1a1209' }}>
+                      🖥️ 16:9 Landscape
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: '#7a6e5f' }}>
+                      YouTube & Video
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Typography Options */}
+              <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'rgba(26,18,9,0.12)' }}>
+                <label className="flex items-center justify-between text-xs font-semibold cursor-pointer" style={{ color: '#1a1209' }}>
+                  <span>UPPERCASE Typography</span>
+                  <input
+                    type="checkbox"
+                    checked={uppercase}
+                    onChange={e => setUppercase(e.target.checked)}
+                    className="w-4 h-4 rounded cursor-pointer"
+                    style={{ accentColor: '#c94f00' }}
+                  />
+                </label>
+                <div>
+                  <div className="flex justify-between text-xs mb-1 font-semibold" style={{ color: '#7a6e5f' }}>
+                    <span>Font Size</span>
+                    <span className="font-mono" style={{ color: '#c94f00' }}>
+                      {fontSize}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="48"
+                    max="110"
+                    value={fontSize}
+                    onChange={e => setFontSize(Number(e.target.value))}
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: '#c94f00' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── CENTER: VIDEO PREVIEW + CONTROLS ─────────────────────────────── */}
