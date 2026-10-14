@@ -13,6 +13,7 @@ import {
 import { MOTION_STYLES } from '../styles';
 import { GRAPHIC_OPTIONS } from '../graphics';
 import { GraphicThumbnail } from './GraphicThumbnail';
+import { StyleThumbnail } from './StyleThumbnail';
 
 export interface StudioSidebarProps {
   activeTab: 'graphics' | 'styles' | 'audio' | 'canvas';
@@ -361,40 +362,63 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </span>
             </div>
 
-            <div className="flex-1 p-3.5 space-y-2.5 overflow-y-auto [scrollbar-width:thin]">
-              {MOTION_STYLES.map(s => {
-                const isSelected = motionStyle === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setMotionStyle(s.id)}
-                    className="w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer shadow-xs hover:shadow-sm"
-                    style={{
-                      borderColor: isSelected ? '#d95d39' : 'rgba(28,21,13,0.14)',
-                      background: isSelected ? '#fffaf4' : '#fdfbf7',
-                      boxShadow: isSelected ? '0 0 0 1.5px #d95d39' : 'none',
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span
-                        className="text-xs font-bold tracking-wide"
-                        style={{ color: isSelected ? '#d95d39' : '#1c150d' }}
+            {/* 2-COLUMN STYLES GRID WITH REAL VIDEO FRAME PREVIEWS */}
+            <div className="flex-1 p-3 overflow-y-auto [scrollbar-width:thin]">
+              <div className="grid grid-cols-2 gap-2.5">
+                {MOTION_STYLES.map(s => {
+                  const isSelected = motionStyle === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setMotionStyle(s.id)}
+                      className="group flex flex-col rounded-xl border transition-all text-left cursor-pointer overflow-hidden relative shadow-xs hover:shadow-sm"
+                      style={{
+                        borderColor: isSelected ? '#d95d39' : 'rgba(28,21,13,0.14)',
+                        background: isSelected ? '#fffaf4' : '#fdfbf7',
+                        boxShadow: isSelected ? '0 0 0 1.5px #d95d39' : '0 1px 3px rgba(0,0,0,0.04)',
+                      }}
+                    >
+                      {/* Real Kinetic Style Frame Preview */}
+                      <div
+                        className="w-full aspect-[16/10] relative border-b overflow-hidden rounded-t-xl bg-[#f8f4ec]"
+                        style={{ borderColor: 'rgba(28,21,13,0.08)' }}
                       >
-                        {s.label}
-                      </span>
-                      {isSelected && (
-                        <span
-                          className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-                          style={{ background: '#d95d39' }}
+                        <StyleThumbnail id={s.id} />
+
+                        {/* Status Badge */}
+                        <div
+                          className="absolute top-1.5 right-1.5 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-xs transition"
+                          style={{
+                            background: isSelected ? '#d95d39' : 'rgba(255,255,255,0.85)',
+                            color: isSelected ? '#ffffff' : '#6b5e50',
+                          }}
                         >
-                          ACTIVE
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-[#7a6e60]">{s.desc}</p>
-                  </button>
-                );
-              })}
+                          {isSelected ? (
+                            <>
+                              <Check className="w-2.5 h-2.5" /> Active
+                            </>
+                          ) : (
+                            'Select'
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Info Text */}
+                      <div className="p-2 flex flex-col justify-between flex-1">
+                        <div
+                          className="text-[11px] font-bold truncate leading-tight"
+                          style={{ color: isSelected ? '#d95d39' : '#1c150d' }}
+                        >
+                          {s.label}
+                        </div>
+                        <div className="text-[9px] truncate mt-0.5 text-[#857767] leading-tight">
+                          {s.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

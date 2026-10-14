@@ -56,16 +56,22 @@ export const ShortsStudio: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [motionStyle, setMotionStyle] = useState<MotionStyle>('askew');
-  const [fontSize, setFontSize] = useState<number>(72);
+  const [motionStyle, setMotionStyle] = useState<MotionStyle>('hook');
+  const [fontSize, setFontSize] = useState<number>(110);
   const [uppercase, setUppercase] = useState<boolean>(true);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [activeTab, setActiveTab] = useState<'graphics' | 'styles' | 'audio' | 'canvas'>('graphics');
   const [graphicFilter, setGraphicFilter] = useState<'all' | 'nature' | 'cinematic' | 'retro'>('all');
   const [activeGraphics, setActiveGraphics] = useState<string[]>([
-    'tree',
     'floral',
+    'tree',
     'petals',
+    'botanicalFern',
+    'butterfly',
+    'corners',
+    'waveform',
+    'particles',
+    'stars',
   ]);
 
   const toggleGraphic = (id: string) => {
@@ -300,21 +306,13 @@ export const ShortsStudio: React.FC = () => {
       }
       c.restore();
 
-      // 3. Bottom Caption Band (clean current lyrics subtitle)
+      // 3. Bottom Caption Subtitle Line (clean, zero overlap with graphics/waveform)
       if (curLine) {
-        const banY = H - (isLandscape ? 130 : 250);
-        const banH = isLandscape ? 90 : 140;
+        // Positioned cleanly near bottom margin below any audio waveform bars
+        const capY = isLandscape ? H - 60 : H - 90;
 
-        // Subtle gradient scrim
-        const banGrad = c.createLinearGradient(0, banY - 40, 0, H);
-        banGrad.addColorStop(0, 'rgba(244,237,216,0)');
-        banGrad.addColorStop(0.25, 'rgba(244,237,216,0.92)');
-        banGrad.addColorStop(1, 'rgba(244,237,216,1)');
-        c.fillStyle = banGrad;
-        c.fillRect(0, banY - 40, W, H - (banY - 40));
-
-        // Draw words with spoken/active coloring
-        const baseCapSz = isLandscape ? 32 : 40;
+        // Draw words with spoken/active coloring — NO opaque background fog
+        const baseCapSz = isLandscape ? 30 : 38;
         c.font = `700 ${baseCapSz}px "Archivo", sans-serif`;
         c.textBaseline = 'middle';
         const lw = curLine.words;
@@ -326,7 +324,6 @@ export const ShortsStudio: React.FC = () => {
         const spScaled = c.measureText(' ').width;
         const totalW3 = lw.reduce((a, w) => a + c.measureText(fmt(w.word)).width + spScaled, -spScaled);
         let bx = W * 0.5 - totalW3 * 0.5;
-        const capY = banY + banH * 0.45;
 
         lw.forEach(w => {
           const isCur = !!(
@@ -627,73 +624,88 @@ export const ShortsStudio: React.FC = () => {
         </div>
       </div>
 
-      {/* ── EXPORT PROGRESS MODAL ────────────────────────────────────────── */}
+      {/* ── EXPORT PROGRESS MODAL (SPACIOUS & BEAUTIFIED) ────────────────── */}
       {isExporting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 select-none">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-xs p-6 select-none">
           <div
-            className="w-full max-w-md rounded-2xl border p-6 space-y-4 shadow-2xl"
+            className="w-full rounded-2xl border p-7 space-y-5 shadow-2xl"
             style={{
-              background: '#fcf9f2',
-              borderColor: 'rgba(28,21,13,0.18)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+              maxWidth: '560px',
+              background: '#fcfaf5',
+              borderColor: 'rgba(28,21,13,0.16)',
+              boxShadow: '0 32px 70px rgba(0,0,0,0.35)',
             }}
           >
+            {/* Modal Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs"
                   style={{ background: '#d95d39' }}
                 >
-                  <Film className="w-4 h-4" />
+                  <Film className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#1c150d]">
+                  <h3 className="text-base font-bold text-[#1c150d] tracking-tight">
                     Rendering & Exporting Video
                   </h3>
-                  <p className="text-[11px] text-[#7a6e60]">
-                    {orientation === 'portrait' ? '9:16 Portrait (1080×1920)' : '16:9 Landscape (1920×1080)'} · 60fps
+                  <p className="text-xs text-[#7a6e60] mt-0.5">
+                    {orientation === 'portrait' ? '9:16 Portrait · 1080×1920' : '16:9 Landscape · 1920×1080'} · 60fps Silent
                   </p>
                 </div>
               </div>
-              <span className="text-xl font-mono font-extrabold text-[#d95d39]">
-                {exportProgress}%
-              </span>
+
+              {/* Big Crisp Percentage */}
+              <div className="flex flex-col items-end">
+                <span className="text-2xl font-mono font-extrabold text-[#d95d39] leading-none">
+                  {exportProgress}%
+                </span>
+                <span className="text-[10px] font-mono text-[#7a6e60] mt-1 uppercase tracking-wider">
+                  ENCODING
+                </span>
+              </div>
             </div>
 
-            {/* Progress Track & Fill */}
+            {/* Elevated Progress Bar */}
             <div
-              className="w-full h-3.5 rounded-full overflow-hidden border p-0.5"
-              style={{ background: '#eee5d5', borderColor: 'rgba(28,21,13,0.14)' }}
+              className="w-full h-4 rounded-full overflow-hidden border p-0.5 shadow-inner"
+              style={{ background: '#ebe2d0', borderColor: 'rgba(28,21,13,0.14)' }}
             >
               <div
                 className="h-full rounded-full transition-all duration-200"
                 style={{
                   width: `${exportProgress}%`,
-                  background: 'linear-gradient(90deg, #d95d39, #ea7a58)',
+                  background: 'linear-gradient(90deg, #d95d39 0%, #ea7a58 100%)',
+                  boxShadow: '0 1px 4px rgba(217,93,57,0.3)',
                 }}
               />
             </div>
 
-            {/* Status Line */}
-            <div className="flex items-center justify-between text-xs font-mono text-[#7a6e60]">
-              <span className="flex items-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#d95d39]" />
-                {exportProgress >= 98
-                  ? 'Assembling MP4 file & downloading...'
-                  : 'Recording frames & audio in silent mode...'}
-              </span>
-              <span>
+            {/* Status & Time (Clean single-line without wrapping) */}
+            <div className="flex items-center justify-between text-xs font-mono text-[#6e6152] pt-0.5">
+              <div className="flex items-center gap-2 min-w-0 pr-3">
+                <Loader2 className="w-4 h-4 animate-spin text-[#d95d39] shrink-0" />
+                <span className="truncate">
+                  {exportProgress >= 98
+                    ? 'Assembling MP4 video file and downloading...'
+                    : 'Capturing synchronized video frames & audio stream...'}
+                </span>
+              </div>
+              <span className="font-semibold shrink-0 whitespace-nowrap text-[#1c150d]">
                 {currentTime.toFixed(1)}s / {duration.toFixed(1)}s
               </span>
             </div>
 
-            {/* Cancel Action */}
-            <div className="pt-2 border-t flex justify-end" style={{ borderColor: 'rgba(28,21,13,0.08)' }}>
+            {/* Cancel Action Footer */}
+            <div className="pt-3 border-t flex items-center justify-between" style={{ borderColor: 'rgba(28,21,13,0.10)' }}>
+              <span className="text-[11px] text-[#8c7f70]">
+                Audio is muted during render to prevent background playback.
+              </span>
               <button
                 onClick={() => {
                   if (exportCancelRef.current) exportCancelRef.current();
                 }}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition hover:bg-black/5 cursor-pointer text-[#7a6e60]"
+                className="px-4 py-2 rounded-xl text-xs font-semibold border transition hover:bg-black/5 cursor-pointer text-[#6b5e50] shadow-xs shrink-0 ml-3"
                 style={{ borderColor: 'rgba(28,21,13,0.18)', background: '#f5eee0' }}
               >
                 Cancel Export
