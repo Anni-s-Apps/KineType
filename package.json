@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "fix-webm-duration": "^1.0.6",
     "lucide-react": "^1.25.0",
     "mp4-muxer": "^5.2.0",
     "react": "^19.0.0",

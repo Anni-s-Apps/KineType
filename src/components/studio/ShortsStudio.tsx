@@ -30,6 +30,9 @@ import {
   renderGraphicsOverlay,
 } from './graphics';
 import { StudioSidebar } from './sidebar/StudioSidebar';
+import { fixVideoBlobDuration } from '../../utils/videoDurationFixer';
+import { exportStudioVideoToMp4 } from '../../services/studioExport';
+import { renderStudioFrame, roundRect } from './renderStudioFrame';
 
 export type MotionStyle = string;
 
@@ -87,6 +90,10 @@ export const ShortsStudio: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportProgress, setExportProgress] = useState<number>(0);
+  const [exportCurrentTime, setExportCurrentTime] = useState<number>(0);
+  const [exportStatus, setExportStatus] = useState<string>('');
+  const [exportEta, setExportEta] = useState<number>(0);
+  const [exportFps, setExportFps] = useState<30 | 60>(30);
 
   // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -207,28 +214,7 @@ export const ShortsStudio: React.FC = () => {
     if (audioRef.current) audioRef.current.currentTime = 0;
   };
 
-  const roundRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    r: number
-  ) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  };
-
-  // ── CORE CANVAS RENDERER ───────────────────────────────────────────────────
+  // ── CORE CANVAS RENDERER (DELEGATED TO CENTRALIZED DETERMINISTIC RENDERER) ───
   const renderFrame = useCallback(
     (t: number) => {
       const canvas = canvasRef.current;
@@ -242,104 +228,21 @@ export const ShortsStudio: React.FC = () => {
       canvas.width = W;
       canvas.height = H;
 
-      // 1. Warm Paper Canvas Background
-      c.fillStyle = C.paper;
-      c.fillRect(0, 0, W, H);
-
-      // Warm subtle vignette
-      const vig = c.createRadialGradient(W * 0.5, H * 0.5, W * 0.2, W * 0.5, H * 0.5, W * 0.85);
-      vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(0.7, 'rgba(40,25,8,0.05)');
-      vig.addColorStop(1, 'rgba(40,25,8,0.18)');
-      c.fillStyle = vig;
-      c.fillRect(0, 0, W, H);
-
-      // 1.5 Graphic Overlays (Corners, Waveform, Particles, Stars, Vinyl, Now Playing)
-      renderGraphicsOverlay(activeGraphics, {
+      renderStudioFrame({
         c,
         W,
         H,
         t,
         isLandscape,
         songTitle,
-        C,
+        lines,
+        words,
+        motionStyle,
+        fontSize,
+        uppercase,
+        activeGraphics,
         isPlaying,
       });
-
-      // Active timing and text formatting
-      const curLine =
-        lines.find(l => t >= l.start && t < l.end) ||
-        lines.find(l => l.start <= t && l.end >= t - 0.5);
-      const activeWord = words.find(w => t >= w.start && t < w.end);
-      const fmt = (s: string) => (uppercase ? s.toUpperCase() : s);
-
-      // 2. Center Kinetic Zone
-      c.save();
-      c.translate(W * 0.5, H * 0.44);
-
-      if (!curLine) {
-        // Musical rest symbol during pauses
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-        const breathY = Math.sin(t * 1.4) * 16;
-        c.font = `italic 400 48px "Cormorant Garamond", serif`;
-        c.fillStyle = 'rgba(26,18,9,0.35)';
-        c.fillText('♩', 0, breathY);
-      } else {
-        // Dispatch to modular motion style!
-        renderMotionStyle(motionStyle, {
-          c,
-          W,
-          H,
-          t,
-          curLine,
-          activeWord,
-          lines,
-          words,
-          fontSize,
-          uppercase,
-          isLandscape,
-          C,
-          fmt,
-          roundRect,
-        });
-      }
-      c.restore();
-
-      // 3. Bottom Caption Subtitle Line (clean, zero overlap with graphics/waveform)
-      if (curLine) {
-        // Positioned cleanly near bottom margin below any audio waveform bars
-        const capY = isLandscape ? H - 60 : H - 90;
-
-        // Draw words with spoken/active coloring — NO opaque background fog
-        const baseCapSz = isLandscape ? 30 : 38;
-        c.font = `700 ${baseCapSz}px "Archivo", sans-serif`;
-        c.textBaseline = 'middle';
-        const lw = curLine.words;
-        const sp = c.measureText(' ').width;
-        const totalW2 = lw.reduce((a, w) => a + c.measureText(fmt(w.word)).width + sp, -sp);
-        const capMaxW = W - 140;
-        const capSz = totalW2 > capMaxW ? baseCapSz * (capMaxW / totalW2) : baseCapSz;
-        c.font = `700 ${capSz}px "Archivo", sans-serif`;
-        const spScaled = c.measureText(' ').width;
-        const totalW3 = lw.reduce((a, w) => a + c.measureText(fmt(w.word)).width + spScaled, -spScaled);
-        let bx = W * 0.5 - totalW3 * 0.5;
-
-        lw.forEach(w => {
-          const isCur = !!(
-            activeWord &&
-            activeWord.word === w.word &&
-            Math.abs(activeWord.start - w.start) < 0.14
-          );
-          const spoken = t >= w.start;
-          const tw2 = c.measureText(fmt(w.word)).width;
-          c.textAlign = 'left';
-          c.fillStyle = isCur ? C.signal : spoken ? C.ink : C.ash;
-          c.fillText(fmt(w.word), bx, capY);
-          bx += tw2 + spScaled;
-        });
-        c.textAlign = 'left';
-      }
     },
     [songTitle, lines, words, motionStyle, fontSize, uppercase, orientation, activeGraphics, isPlaying]
   );
@@ -361,60 +264,114 @@ export const ShortsStudio: React.FC = () => {
     };
   }, [isPlaying, currentTime, renderFrame]);
 
-  // Export to MP4 / WebM (Silent mode + Rich Console Debugging)
+  // Export to MP4 (Deterministic 60 FPS Motion-as-Code Engine + Full Metadata)
   const handleExportVideo = async () => {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
-    if (!canvas || !audio) {
-      console.error('❌ [Export Video] Canvas or Audio ref is null!');
+    if (!audioUrl) {
+      console.error('❌ [Export Video] Audio URL is missing!');
       return;
     }
 
-    console.log('🎬 [Export Video] Initializing video export...', {
+    const effectiveDuration =
+      audio?.duration && !isNaN(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : duration;
+
+    console.log('🎬 [Export Video] Initializing 60 FPS deterministic video export...', {
       songTitle,
       orientation,
       resolution: orientation === 'portrait' ? '1080×1920' : '1920×1080',
-      duration,
+      duration: effectiveDuration,
       motionStyle,
       activeGraphics,
     });
 
+    const abortController = new AbortController();
+    let isCancelled = false;
+
+    exportCancelRef.current = () => {
+      console.warn('🛑 [Export Video] Export cancelled by user.');
+      isCancelled = true;
+      abortController.abort();
+      setIsExporting(false);
+      setExportProgress(0);
+      setExportCurrentTime(0);
+      setExportEta(0);
+      setExportStatus('');
+    };
+
     try {
       setIsExporting(true);
       setExportProgress(0);
+      setExportCurrentTime(0);
+      setExportEta(0);
+      setExportStatus('Initializing 60 FPS broadcast export engine...');
       setIsPlaying(false);
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
 
-      // 60fps canvas stream
+      // ── PRIMARY ENGINE: WebCodecs Deterministic Offline Rendering ──────
+      if (typeof VideoEncoder !== 'undefined') {
+        console.log(`🚀 [Export Video] Running WebCodecs ${exportFps} FPS deterministic engine...`);
+        const mp4Blob = await exportStudioVideoToMp4({
+          audioUrl,
+          songTitle,
+          orientation,
+          duration: effectiveDuration,
+          motionStyle,
+          fontSize,
+          uppercase,
+          activeGraphics,
+          lines,
+          words,
+          fps: exportFps,
+          signal: abortController.signal,
+          onProgress: p => {
+            if (isCancelled) return;
+            setExportProgress(p.percent);
+            setExportCurrentTime(p.currentTime);
+            setExportEta(p.etaSeconds);
+            setExportStatus(p.status);
+          },
+        });
+
+        if (isCancelled) return;
+
+        console.log(`✅ [Export Video] ${exportFps} FPS MP4 export successful! File size: ${(mp4Blob.size / (1024 * 1024)).toFixed(2)} MB`);
+        const url = URL.createObjectURL(mp4Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const cleanName = songTitle.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+        a.download = `${cleanName || 'kinetic_video'}_${orientation}_${exportFps}fps.mp4`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportCurrentTime(0);
+        setExportEta(0);
+        setExportStatus('');
+        return;
+      }
+
+      // ── FALLBACK ENGINE: MediaRecorder + Binary Duration Fixer ─────────────
+      console.warn('⚠️ [Export Video] VideoEncoder not supported, falling back to MediaRecorder stream capture...');
+      if (!canvas || !audio) return;
+
       const stream = canvas.captureStream(60);
-
-      // Web Audio setup (reuse context & source node to prevent InvalidStateError)
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
       const audioCtx = audioCtxRef.current;
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
-
-      if (!audioSourceRef.current) {
-        audioSourceRef.current = audioCtx.createMediaElementSource(audio);
-      }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      if (!audioSourceRef.current) audioSourceRef.current = audioCtx.createMediaElementSource(audio);
       const src = audioSourceRef.current;
-
-      if (!mediaDestRef.current) {
-        mediaDestRef.current = audioCtx.createMediaStreamDestination();
-      }
+      if (!mediaDestRef.current) mediaDestRef.current = audioCtx.createMediaStreamDestination();
       const dest = mediaDestRef.current;
-
-      // Disconnect previous connections safely
-      try {
-        src.disconnect();
-      } catch (e) {
-        // Safe to ignore if not connected
-      }
-
-      // Route audio ONLY to recorder destination stream — NOT to audioCtx.destination!
-      // This keeps user speakers completely SILENT so music doesn't blast or auto-play!
+      try { src.disconnect(); } catch (e) {}
       src.connect(dest);
 
       const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
@@ -423,8 +380,6 @@ export const ShortsStudio: React.FC = () => {
         ? 'video/webm;codecs=vp9'
         : 'video/webm';
 
-      console.log('🎬 [Export Video] Selected container mimeType:', mimeType);
-
       const combinedStream = new MediaStream([
         ...stream.getVideoTracks(),
         ...dest.stream.getAudioTracks(),
@@ -432,26 +387,19 @@ export const ShortsStudio: React.FC = () => {
 
       const rec = new MediaRecorder(combinedStream, {
         mimeType,
-        videoBitsPerSecond: 16_000_000, // 16 Mbps high-fidelity
+        videoBitsPerSecond: 18_000_000,
       });
 
       const chunks: Blob[] = [];
       rec.ondataavailable = e => {
-        if (e.data && e.data.size > 0) {
-          chunks.push(e.data);
-          console.log(`📦 [Export Video] Captured chunk #${chunks.length} (${(e.data.size / 1024).toFixed(1)} KB)`);
-        }
+        if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
-      let isCancelled = false;
-
-      const finishExport = () => {
+      const finishFallback = async () => {
         if (isCancelled) return;
-        console.log(`🏁 [Export Video] Recording complete. Assembling ${chunks.length} chunks into final video...`);
-        const blob = new Blob(chunks, { type: mimeType });
-        console.log(`✅ [Export Video] Export finished! File size: ${(blob.size / (1024 * 1024)).toFixed(2)} MB`);
-
-        const url = URL.createObjectURL(blob);
+        const rawBlob = new Blob(chunks, { type: mimeType });
+        const fixedBlob = await fixVideoBlobDuration(rawBlob, effectiveDuration);
+        const url = URL.createObjectURL(fixedBlob);
         const a = document.createElement('a');
         a.href = url;
         const cleanName = songTitle.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
@@ -461,56 +409,42 @@ export const ShortsStudio: React.FC = () => {
 
         setIsExporting(false);
         setExportProgress(0);
+        setExportCurrentTime(0);
         audio.currentTime = 0;
         audio.pause();
       };
 
-      rec.onstop = finishExport;
-
-      exportCancelRef.current = () => {
-        console.warn('🛑 [Export Video] Export cancelled by user.');
-        isCancelled = true;
-        try {
-          if (rec.state !== 'inactive') rec.stop();
-        } catch (e) {}
-        audio.pause();
-        audio.currentTime = 0;
-        setIsExporting(false);
-        setExportProgress(0);
-      };
-
+      rec.onstop = finishFallback;
       rec.start(250);
       audio.currentTime = 0;
       await audio.play();
-
-      console.log('▶️ [Export Video] Rendering underway in silent mode (no speaker output)...');
 
       const tick = setInterval(() => {
         if (isCancelled) {
           clearInterval(tick);
           return;
         }
-
-        const pct = Math.min(100, Math.round((audio.currentTime / duration) * 100));
+        setExportCurrentTime(audio.currentTime);
+        const pct = Math.min(100, Math.round((audio.currentTime / effectiveDuration) * 100));
         setExportProgress(pct);
 
-        console.log(
-          `⏱️ [Export Video] Progress: ${pct}% (${audio.currentTime.toFixed(1)}s / ${duration.toFixed(1)}s)`
-        );
-
-        if (audio.currentTime >= duration - 0.15 || audio.ended) {
+        if (audio.currentTime >= effectiveDuration - 0.15 || audio.ended) {
           clearInterval(tick);
-          console.log('⏹️ [Export Video] Reached track end. Stopping recorder...');
-          try {
-            if (rec.state !== 'inactive') rec.stop();
-          } catch (e) {}
+          try { if (rec.state !== 'inactive') rec.stop(); } catch (e) {}
           audio.pause();
         }
       }, 250);
-    } catch (err) {
-      console.error('❌ [Export Video Error]:', err);
+    } catch (err: any) {
+      if (err?.message?.includes('cancelled')) {
+        console.log('Export cancelled safely.');
+      } else {
+        console.error('❌ [Export Video Error]:', err);
+      }
       setIsExporting(false);
       setExportProgress(0);
+      setExportCurrentTime(0);
+      setExportEta(0);
+      setExportStatus('');
       if (audio) {
         audio.pause();
         audio.currentTime = 0;
@@ -603,6 +537,35 @@ export const ShortsStudio: React.FC = () => {
             <span>Load Demo Track</span>
           </button>
 
+          {/* Framerate Selection Segment */}
+          <div
+            className="flex items-center p-0.5 rounded-xl border text-[11px] font-mono font-bold"
+            style={{ background: '#e3d7c3', borderColor: 'rgba(28,21,13,0.12)' }}
+          >
+            <button
+              onClick={() => setExportFps(30)}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                exportFps === 30
+                  ? 'bg-white text-[#d95d39] shadow-xs'
+                  : 'text-[#6e6152] hover:text-[#1c150d]'
+              }`}
+              title="30 FPS: Standard Shorts/Reels framerate (Fast & silky smooth)"
+            >
+              30 FPS
+            </button>
+            <button
+              onClick={() => setExportFps(60)}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                exportFps === 60
+                  ? 'bg-white text-[#d95d39] shadow-xs'
+                  : 'text-[#6e6152] hover:text-[#1c150d]'
+              }`}
+              title="60 FPS: Ultra-high framerate broadcast quality"
+            >
+              60 FPS
+            </button>
+          </div>
+
           <button
             onClick={handleExportVideo}
             disabled={isExporting}
@@ -617,7 +580,7 @@ export const ShortsStudio: React.FC = () => {
             ) : (
               <>
                 <Film className="w-3.5 h-3.5" />
-                <span>Export {orientation === 'portrait' ? '9:16' : '16:9'} MP4</span>
+                <span>Export {orientation === 'portrait' ? '9:16' : '16:9'} MP4 ({exportFps}fps)</span>
               </>
             )}
           </button>
@@ -686,14 +649,22 @@ export const ShortsStudio: React.FC = () => {
               <div className="flex items-center gap-2 min-w-0 pr-3">
                 <Loader2 className="w-4 h-4 animate-spin text-[#d95d39] shrink-0" />
                 <span className="truncate">
-                  {exportProgress >= 98
-                    ? 'Assembling MP4 video file and downloading...'
-                    : 'Capturing synchronized video frames & audio stream...'}
+                  {exportStatus ||
+                    (exportProgress >= 98
+                      ? 'Finalizing 60 FPS MP4 video file...'
+                      : 'Rendering 60 FPS deterministic video frames...')}
                 </span>
               </div>
-              <span className="font-semibold shrink-0 whitespace-nowrap text-[#1c150d]">
-                {currentTime.toFixed(1)}s / {duration.toFixed(1)}s
-              </span>
+              <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
+                {exportEta > 0 && exportProgress < 98 && (
+                  <span className="text-[11px] text-[#8c7f70] font-mono">
+                    ETA: {exportEta}s
+                  </span>
+                )}
+                <span className="font-semibold text-[#1c150d]">
+                  {exportCurrentTime.toFixed(1)}s / {duration.toFixed(1)}s
+                </span>
+              </div>
             </div>
 
             {/* Cancel Action Footer */}
