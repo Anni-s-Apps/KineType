@@ -110,7 +110,7 @@ export const AiStylePromptModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 [scrollbar-width:thin]">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* How It Works banner */}
           <div
             className="p-4 rounded-xl border flex items-start gap-3.5"
@@ -154,11 +154,12 @@ export const AiStylePromptModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             <pre
-              className="p-4 rounded-xl text-[11.5px] font-mono leading-relaxed overflow-x-auto border max-h-[340px] select-all [scrollbar-width:thin]"
+              className="p-4 rounded-xl text-[11.5px] font-mono leading-relaxed overflow-x-auto border max-h-[340px] select-all [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               style={{
-                background: '#1c150d',
-                color: '#e8dcc8',
-                borderColor: 'rgba(0,0,0,0.3)',
+                background: '#f5eee3',
+                color: '#2a2016',
+                borderColor: 'rgba(28,21,13,0.14)',
+                boxShadow: 'inset 0 1px 3px rgba(28,21,13,0.05)',
               }}
             >
               {AI_STYLE_MASTER_PROMPT}

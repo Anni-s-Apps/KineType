@@ -7,15 +7,18 @@ interface Props {
 }
 
 const DEMO_WORDS: TimedWord[] = [
-  { word: 'BETTER', start: 0.1, end: 0.75 },
-  { word: 'ON', start: 0.75, end: 1.3 },
-  { word: 'MY', start: 1.3, end: 1.85 },
-  { word: 'OWN', start: 1.85, end: 2.6 },
+  { word: 'BETTER', start: 0.1, end: 0.45 },
+  { word: 'ON', start: 0.45, end: 0.8 },
+  { word: 'MY', start: 0.8, end: 1.15 },
+  { word: 'OWN', start: 1.15, end: 1.55 },
+  { word: 'TONIGHT', start: 1.55, end: 1.95 },
+  { word: 'RUNNING', start: 1.95, end: 2.35 },
+  { word: 'FREE', start: 2.35, end: 2.75 },
 ];
 
 const DEMO_LINE: TimedLine = {
   i: 0,
-  text: 'BETTER ON MY OWN',
+  text: 'BETTER ON MY OWN TONIGHT RUNNING FREE',
   start: 0.0,
   end: 2.8,
   words: DEMO_WORDS,

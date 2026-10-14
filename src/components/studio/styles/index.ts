@@ -3,7 +3,8 @@ import { renderAskew } from './askew';
 import { renderHook } from './hook';
 import { renderVerdict } from './verdict';
 import { renderMask } from './mask';
-import { renderPress } from './press';
+import { renderSpiral } from './spiral';
+import { renderSpiral2 } from './spiral2';
 import { renderMono } from './mono';
 import { renderSerif } from './serif';
 
@@ -12,7 +13,8 @@ export { renderAskew } from './askew';
 export { renderHook } from './hook';
 export { renderVerdict } from './verdict';
 export { renderMask } from './mask';
-export { renderPress } from './press';
+export { renderSpiral } from './spiral';
+export { renderSpiral2 } from './spiral2';
 export { renderMono } from './mono';
 export { renderSerif } from './serif';
 
@@ -30,10 +32,16 @@ export const MOTION_STYLES: MotionStyleDefinition[] = [
     render: renderMask,
   },
   {
-    id: 'press',
-    label: 'Press',
-    desc: 'Industrial clamp jaws with physical squish',
-    render: renderPress,
+    id: 'spiral',
+    label: 'Spiral',
+    desc: 'Continuous circular orbit typography with dynamic wheel rotation',
+    render: renderSpiral,
+  },
+  {
+    id: 'spiral2',
+    label: 'Spiral 2',
+    desc: '3D perspective tilted vortex with inward suction',
+    render: renderSpiral2,
   },
   {
     id: 'askew',
