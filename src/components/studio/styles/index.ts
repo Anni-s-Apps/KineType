@@ -18,45 +18,45 @@ export { renderSerif } from './serif';
 
 export const MOTION_STYLES: MotionStyleDefinition[] = [
   {
-    id: 'askew',
-    label: '⚡ Askew',
-    desc: 'Tilting angles + spring pop badge',
-    render: renderAskew,
-  },
-  {
-    id: 'hook',
-    label: '💥 Hook Slam',
-    desc: 'Specimen guidelines + slam echoes',
-    render: renderHook,
-  },
-  {
     id: 'verdict',
-    label: '⚖️ Verdict',
-    desc: 'Multi-row line slam + implosion',
+    label: 'Verdict',
+    desc: 'Editorial spring slam with live baseline rule',
     render: renderVerdict,
   },
   {
     id: 'mask',
-    label: '▓ [MASK]',
-    desc: 'Bone blocks wipe left→right',
+    label: 'Mask',
+    desc: 'Editorial redaction wipe with glowing scanline',
     render: renderMask,
   },
   {
     id: 'press',
-    label: '🗜 Press',
-    desc: 'Words compress into slab',
+    label: 'Press',
+    desc: 'Industrial clamp jaws with physical squish',
     render: renderPress,
   },
   {
+    id: 'askew',
+    label: 'Askew',
+    desc: 'Dynamic poster angles with spring sticker pop',
+    render: renderAskew,
+  },
+  {
+    id: 'hook',
+    label: 'Hook',
+    desc: 'Focal scale-slam with kinetic echo outlines',
+    render: renderHook,
+  },
+  {
     id: 'mono',
-    label: '> Mono',
-    desc: 'Terminal cursor + line tag',
+    label: 'Mono',
+    desc: 'Tactile typewriter terminal with live cursor',
     render: renderMono,
   },
   {
     id: 'serif',
-    label: '✦ Serif',
-    desc: 'Cormorant float + star underline',
+    label: 'Serif',
+    desc: 'Luxury Cormorant Garamond with diamond accent',
     render: renderSerif,
   },
 ];

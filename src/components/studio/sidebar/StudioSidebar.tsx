@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sparkles,
   Layers,
@@ -9,11 +9,13 @@ import {
   Loader2,
   Check,
   Plus,
+  Wand2,
 } from 'lucide-react';
 import { MOTION_STYLES } from '../styles';
 import { GRAPHIC_OPTIONS } from '../graphics';
 import { GraphicThumbnail } from './GraphicThumbnail';
 import { StyleThumbnail } from './StyleThumbnail';
+import { AiStylePromptModal } from './AiStylePromptModal';
 
 export interface StudioSidebarProps {
   activeTab: 'graphics' | 'styles' | 'audio' | 'canvas';
@@ -72,6 +74,8 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   linesCount,
   duration,
 }) => {
+  const [showAiModal, setShowAiModal] = useState(false);
+
   return (
     <div
       className="flex flex-row shrink-0 h-full select-none border-r"
@@ -403,21 +407,58 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                         </div>
                       </div>
 
-                      {/* Info Text */}
-                      <div className="p-2 flex flex-col justify-between flex-1">
-                        <div
-                          className="text-[11px] font-bold truncate leading-tight"
+                      {/* Clean Style Title */}
+                      <div className="px-2.5 py-2 flex items-center justify-between">
+                        <span
+                          className="text-[12px] font-bold truncate leading-tight tracking-tight"
                           style={{ color: isSelected ? '#d95d39' : '#1c150d' }}
                         >
                           {s.label}
-                        </div>
-                        <div className="text-[9px] truncate mt-0.5 text-[#857767] leading-tight">
-                          {s.desc}
-                        </div>
+                        </span>
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#d95d39] shrink-0" />
+                        )}
                       </div>
                     </button>
                   );
                 })}
+
+                {/* Create Custom Style with AI Card */}
+                <button
+                  onClick={() => setShowAiModal(true)}
+                  className="group flex flex-col rounded-xl border border-dashed transition-all text-left cursor-pointer overflow-hidden relative shadow-xs hover:shadow-sm"
+                  style={{
+                    borderColor: 'rgba(217,93,57,0.40)',
+                    background: '#faf4ea',
+                  }}
+                >
+                  <div
+                    className="w-full aspect-[16/10] relative border-b flex flex-col items-center justify-center p-3 text-center overflow-hidden rounded-t-xl"
+                    style={{ borderColor: 'rgba(217,93,57,0.15)', background: '#f5ede0' }}
+                  >
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs mb-1.5 transition group-hover:scale-105"
+                      style={{ background: '#d95d39' }}
+                    >
+                      <Wand2 className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9.5px] font-bold text-[#d95d39] uppercase tracking-wider">
+                      Custom Engine
+                    </span>
+                  </div>
+
+                  <div className="px-2.5 py-2 flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-[#1c150d] group-hover:text-[#d95d39] transition">
+                      Create with AI
+                    </span>
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(217,93,57,0.12)', color: '#d95d39' }}
+                    >
+                      Prompt
+                    </span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -614,6 +655,12 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           </div>
         )}
       </div>
+
+      {/* AI Style Prompt Modal */}
+      <AiStylePromptModal
+        isOpen={showAiModal}
+        onClose={() => setShowAiModal(false)}
+      />
     </div>
   );
 };
