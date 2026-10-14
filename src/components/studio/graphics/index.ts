@@ -8,102 +8,84 @@ import { renderCorners } from './items/corners';
 import { renderWaveform } from './items/waveform';
 import { renderParticles } from './items/particles';
 import { renderStars } from './items/stars';
-import { renderVinyl } from './items/vinyl';
-import { renderNowPlaying } from './items/nowPlaying';
 
 export * from './types';
 
 export const GRAPHIC_OPTIONS: GraphicItem[] = [
-  // 🌿 Nature & Botanical Decorations
+  // ── Botanical & Nature Motifs ─────────────────────────────────────────────
   {
     id: 'floral',
-    label: 'Corner Floral & Vine',
+    index: '№ 01',
+    label: 'Corner Floral',
+    sublabel: 'Flora Japonica',
     category: 'nature',
-    icon: '🌸',
-    desc: 'Blooming flowers & delicate stems on corners',
-    previewBg: 'rgba(214,115,96,0.15)',
+    desc: 'Blooming branch & delicate corner vine',
   },
   {
     id: 'tree',
-    label: 'Aesthetic Bonsai / Tree',
+    index: '№ 02',
+    label: 'Bonsai Silhouette',
+    sublabel: 'Pinus Silvestris',
     category: 'nature',
-    icon: '🌳',
-    desc: 'Sumi-e ink tree silhouette with gentle breeze',
-    previewBg: 'rgba(60,80,52,0.15)',
+    desc: 'Sumi-e ink tree with gentle breeze',
   },
   {
     id: 'petals',
-    label: 'Falling Floral Petals',
+    index: '№ 03',
+    label: 'Falling Petals',
+    sublabel: 'Sakura Decidua',
     category: 'nature',
-    icon: '🍃',
-    desc: 'Soft rose & sakura petals tumbling down',
-    previewBg: 'rgba(201,79,0,0.15)',
+    desc: 'Soft petals drifting & tumbling down',
   },
   {
     id: 'botanicalFern',
-    label: 'Vintage Botanical Fern',
+    index: '№ 04',
+    label: 'Herbarium Fern',
+    sublabel: 'Pteridophyta',
     category: 'nature',
-    icon: '🌿',
-    desc: 'Arching herbarium fern fronds on border',
-    previewBg: 'rgba(74,94,62,0.15)',
+    desc: 'Vintage arching pinnate fronds',
   },
   {
     id: 'butterfly',
-    label: 'Fluttering Butterfly',
+    index: '№ 05',
+    label: 'Vintage Butterfly',
+    sublabel: 'Papilio Flutter',
     category: 'nature',
-    icon: '🦋',
-    desc: 'Delicate line-art butterfly flapping wings',
-    previewBg: 'rgba(235,160,140,0.15)',
+    desc: 'Delicate line-art fluttering wings',
   },
 
-  // 🎬 Cinematic & Design Accents
+  // ── Cinematic & Acoustic Accents ──────────────────────────────────────────
   {
     id: 'corners',
-    label: 'Viewfinder Corners',
+    index: '№ 06',
+    label: 'Viewfinder Crop',
+    sublabel: 'Optical Marks',
     category: 'cinematic',
-    icon: '◰',
-    desc: 'Cinematic crop marks & crosshairs',
-    previewBg: 'rgba(26,18,9,0.08)',
+    desc: 'Cinematic crop ticks & crosshairs',
   },
   {
     id: 'waveform',
-    label: 'Live Audio Waveform',
+    index: '№ 07',
+    label: 'Acoustic EQ',
+    sublabel: 'Frequens Pulses',
     category: 'audio',
-    icon: 'ılı',
-    desc: 'Dynamic frequency bars bouncing to rhythm',
-    previewBg: 'rgba(201,79,0,0.12)',
+    desc: 'Rhythmic audio frequency bar pulses',
   },
   {
     id: 'particles',
-    label: 'Floating Dust & Embers',
+    index: '№ 08',
+    label: 'Warm Dust',
+    sublabel: 'Pulvis Ambient',
     category: 'cinematic',
-    icon: '✧',
-    desc: 'Organic warm particles drifting upwards',
-    previewBg: 'rgba(26,18,9,0.08)',
+    desc: 'Floating textured paper dust embers',
   },
   {
     id: 'stars',
-    label: 'Aesthetic Stars',
+    index: '№ 09',
+    label: 'Geometric Stars',
+    sublabel: 'Astra Polaris',
     category: 'cinematic',
-    icon: '✦',
-    desc: 'Geometric 4-point star pulses and accents',
-    previewBg: 'rgba(201,79,0,0.1)',
-  },
-  {
-    id: 'vinyl',
-    label: 'Retro Vinyl Disk',
-    category: 'retro',
-    icon: '◎',
-    desc: 'Spinning vinyl record in top corner',
-    previewBg: 'rgba(26,18,9,0.12)',
-  },
-  {
-    id: 'nowPlaying',
-    label: 'Now Playing Badge',
-    category: 'retro',
-    icon: '♫',
-    desc: 'Minimal floating song card with pulsing indicator',
-    previewBg: 'rgba(237,228,204,0.3)',
+    desc: 'Minimal 4-point star pulses & accents',
   },
 ];
 
@@ -120,6 +102,4 @@ export const renderGraphicsOverlay = (
   if (activeGraphics.includes('stars')) renderStars(ctx);
   if (activeGraphics.includes('waveform')) renderWaveform(ctx);
   if (activeGraphics.includes('corners')) renderCorners(ctx);
-  if (activeGraphics.includes('vinyl')) renderVinyl(ctx);
-  if (activeGraphics.includes('nowPlaying')) renderNowPlaying(ctx);
 };

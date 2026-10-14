@@ -8,7 +8,7 @@ import {
   Zap,
   Loader2,
   Check,
-  Plus,
+  RotateCcw,
 } from 'lucide-react';
 import { MOTION_STYLES } from '../styles';
 import { GRAPHIC_OPTIONS } from '../graphics';
@@ -72,142 +72,189 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
   duration,
 }) => {
   return (
-    <div className="flex flex-row shrink-0 h-full select-none" style={{ background: '#ece3cb' }}>
-      {/* ── 1. COMPACT PAPER ICON RAIL ──────────────────────────────────── */}
+    <div
+      className="flex flex-row shrink-0 h-full select-none border-r"
+      style={{
+        background: '#ece3ca',
+        borderColor: 'rgba(26,18,9,0.22)',
+      }}
+    >
+      {/* ── 1. BOOKBINDER SPINE / VERTICAL INDEX TABS ────────────────────── */}
       <div
-        className="flex flex-col items-center py-3 border-r"
+        className="flex flex-col items-center justify-between py-4 border-r shrink-0"
         style={{
-          borderColor: 'rgba(26,18,9,0.18)',
-          background: '#e4d9be',
-          width: '56px',
+          width: '54px',
+          background: '#e3d7bb',
+          borderColor: 'rgba(26,18,9,0.20)',
         }}
       >
-        <button
-          onClick={() => setActiveTab('graphics')}
-          className="w-10 h-10 mb-2 flex flex-col items-center justify-center border transition relative cursor-pointer"
-          style={{
-            borderColor: activeTab === 'graphics' ? '#c94f00' : 'rgba(26,18,9,0.15)',
-            background: activeTab === 'graphics' ? '#c94f00' : 'transparent',
-            color: activeTab === 'graphics' ? '#fbf8f0' : '#4a3f31',
-          }}
-          title="Decorative Elements"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span className="text-[8px] font-mono uppercase tracking-tight mt-0.5">ELEM</span>
-          {activeGraphics.length > 0 && (
-            <span
-              className="absolute -top-1 -right-1 text-[8px] font-mono px-1 border"
-              style={{
-                background: '#1a1209',
-                color: '#ffffff',
-                borderColor: '#e4d9be',
-              }}
-            >
-              {activeGraphics.length}
-            </span>
-          )}
-        </button>
+        <div className="flex flex-col items-center gap-3 w-full">
+          {/* Top Logo Monogram */}
+          <div
+            className="w-8 h-8 rounded-sm border flex items-center justify-center font-mono font-black text-xs tracking-tighter mb-2"
+            style={{
+              borderColor: 'rgba(26,18,9,0.3)',
+              background: '#f4eedb',
+              color: '#c94f00',
+            }}
+          >
+            §M
+          </div>
 
-        <button
-          onClick={() => setActiveTab('styles')}
-          className="w-10 h-10 mb-2 flex flex-col items-center justify-center border transition cursor-pointer"
-          style={{
-            borderColor: activeTab === 'styles' ? '#c94f00' : 'rgba(26,18,9,0.15)',
-            background: activeTab === 'styles' ? '#c94f00' : 'transparent',
-            color: activeTab === 'styles' ? '#fbf8f0' : '#4a3f31',
-          }}
-          title="Motion Typography"
-        >
-          <Layers className="w-4 h-4" />
-          <span className="text-[8px] font-mono uppercase tracking-tight mt-0.5">TYPE</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audio')}
-          className="w-10 h-10 mb-2 flex flex-col items-center justify-center border transition cursor-pointer"
-          style={{
-            borderColor: activeTab === 'audio' ? '#c94f00' : 'rgba(26,18,9,0.15)',
-            background: activeTab === 'audio' ? '#c94f00' : 'transparent',
-            color: activeTab === 'audio' ? '#fbf8f0' : '#4a3f31',
-          }}
-          title="Audio Track"
-        >
-          <Music className="w-4 h-4" />
-          <span className="text-[8px] font-mono uppercase tracking-tight mt-0.5">AUDIO</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('canvas')}
-          className="w-10 h-10 mb-2 flex flex-col items-center justify-center border transition cursor-pointer"
-          style={{
-            borderColor: activeTab === 'canvas' ? '#c94f00' : 'rgba(26,18,9,0.15)',
-            background: activeTab === 'canvas' ? '#c94f00' : 'transparent',
-            color: activeTab === 'canvas' ? '#fbf8f0' : '#4a3f31',
-          }}
-          title="Format & Canvas"
-        >
-          <Sliders className="w-4 h-4" />
-          <span className="text-[8px] font-mono uppercase tracking-tight mt-0.5">FMT</span>
-        </button>
-      </div>
-
-      {/* ── 2. EDITORIAL PAPER DRAWER PANEL ─────────────────────────────── */}
-      <div
-        className="border-r overflow-y-auto flex flex-col shrink-0 [scrollbar-width:thin]"
-        style={{
-          borderColor: 'rgba(26,18,9,0.18)',
-          background: '#ede4cb',
-          width: '380px',
-        }}
-      >
-        {/* TAB: GRAPHICS & DECORATIVE ELEMENTS */}
-        {activeTab === 'graphics' && (
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <div
-              className="p-3 border-b flex items-center justify-between"
-              style={{ borderColor: 'rgba(26,18,9,0.16)', background: '#e7dcc0' }}
-            >
-              <div>
-                <h3 className="text-xs font-mono font-bold tracking-wider uppercase" style={{ color: '#1a1209' }}>
-                  Graphics & Motifs
-                </h3>
-                <p className="text-[10px] font-sans" style={{ color: '#70624e' }}>
-                  Click tile to toggle on video canvas
-                </p>
-              </div>
+          {/* Tab 1: Motifs / Graphics */}
+          <button
+            onClick={() => setActiveTab('graphics')}
+            className="w-9 h-11 flex flex-col items-center justify-center border transition relative cursor-pointer"
+            style={{
+              borderColor: activeTab === 'graphics' ? '#c94f00' : 'rgba(26,18,9,0.18)',
+              background: activeTab === 'graphics' ? '#c94f00' : '#ece3ca',
+              color: activeTab === 'graphics' ? '#fff' : '#4a3d2e',
+              boxShadow: activeTab === 'graphics' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
+            }}
+            title="Aesthetic Motifs & Overlays"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">MOTIF</span>
+            {activeGraphics.length > 0 && (
               <span
-                className="text-[10px] font-mono px-2 py-0.5 border"
+                className="absolute -top-1 -right-1 text-[7.5px] font-mono font-bold px-1 border"
                 style={{
-                  borderColor: 'rgba(201,79,0,0.4)',
-                  background: 'rgba(201,79,0,0.1)',
-                  color: '#c94f00',
+                  background: '#1a1209',
+                  color: '#ffffff',
+                  borderColor: '#e3d7bb',
                 }}
               >
-                {activeGraphics.length} ACTIVE
+                {activeGraphics.length}
               </span>
+            )}
+          </button>
+
+          {/* Tab 2: Typography / Motion */}
+          <button
+            onClick={() => setActiveTab('styles')}
+            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
+            style={{
+              borderColor: activeTab === 'styles' ? '#c94f00' : 'rgba(26,18,9,0.18)',
+              background: activeTab === 'styles' ? '#c94f00' : '#ece3ca',
+              color: activeTab === 'styles' ? '#fff' : '#4a3d2e',
+              boxShadow: activeTab === 'styles' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
+            }}
+            title="Kinetic Motion Typography"
+          >
+            <Layers className="w-4 h-4" />
+            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">TYPE</span>
+          </button>
+
+          {/* Tab 3: Audio & Sync */}
+          <button
+            onClick={() => setActiveTab('audio')}
+            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
+            style={{
+              borderColor: activeTab === 'audio' ? '#c94f00' : 'rgba(26,18,9,0.18)',
+              background: activeTab === 'audio' ? '#c94f00' : '#ece3ca',
+              color: activeTab === 'audio' ? '#fff' : '#4a3d2e',
+              boxShadow: activeTab === 'audio' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
+            }}
+            title="Audio Track & Syllables"
+          >
+            <Music className="w-4 h-4" />
+            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">TRACK</span>
+          </button>
+
+          {/* Tab 4: Format & Canvas */}
+          <button
+            onClick={() => setActiveTab('canvas')}
+            className="w-9 h-11 flex flex-col items-center justify-center border transition cursor-pointer"
+            style={{
+              borderColor: activeTab === 'canvas' ? '#c94f00' : 'rgba(26,18,9,0.18)',
+              background: activeTab === 'canvas' ? '#c94f00' : '#ece3ca',
+              color: activeTab === 'canvas' ? '#fff' : '#4a3d2e',
+              boxShadow: activeTab === 'canvas' ? '0 2px 6px rgba(201,79,0,0.25)' : 'none',
+            }}
+            title="Drafting & Format"
+          >
+            <Sliders className="w-4 h-4" />
+            <span className="text-[7.5px] font-mono tracking-wider uppercase mt-0.5">FMT</span>
+          </button>
+        </div>
+
+        {/* Bottom Spine Catalog Mark */}
+        <div className="rotate-180 writing-vertical-lr text-[8px] font-mono tracking-widest uppercase opacity-40 text-[#1a1209]">
+          ATELIER · 2026
+        </div>
+      </div>
+
+      {/* ── 2. EDITORIAL SPECIMEN DRAWER PANEL ───────────────────────────── */}
+      <div
+        className="flex flex-col shrink-0 h-full overflow-hidden"
+        style={{
+          width: '395px',
+          background: '#ede4cb',
+        }}
+      >
+        {/* ══ TAB 1: GRAPHICS & BOTANICAL MOTIFS ═══════════════════════════ */}
+        {activeTab === 'graphics' && (
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* Header Plate */}
+            <div
+              className="p-3.5 border-b flex items-center justify-between shrink-0"
+              style={{
+                borderColor: 'rgba(26,18,9,0.18)',
+                background: '#e6dac0',
+              }}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
+                    PLATE · COLLECTION
+                  </span>
+                  <span className="text-[8px] font-mono opacity-50">§ 01</span>
+                </div>
+                <h3
+                  className="text-sm font-bold tracking-tight mt-0.5"
+                  style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
+                >
+                  Visual Motifs & Botanical Slides
+                </h3>
+              </div>
+
+              <div className="text-right">
+                <span
+                  className="text-[9px] font-mono font-bold px-2 py-0.5 border"
+                  style={{
+                    borderColor: '#c94f00',
+                    background: 'rgba(201,79,0,0.12)',
+                    color: '#c94f00',
+                  }}
+                >
+                  {activeGraphics.length} MOUNTED
+                </span>
+              </div>
             </div>
 
-            {/* Filter Pills / Presets */}
+            {/* Filter & Action Bar */}
             <div
-              className="px-3 py-2 border-b flex items-center justify-between gap-1 text-[10px] font-mono uppercase"
-              style={{ borderColor: 'rgba(26,18,9,0.14)', background: '#ede3c7' }}
+              className="px-3 py-2 border-b flex items-center justify-between gap-1 text-[9px] font-mono uppercase shrink-0"
+              style={{
+                borderColor: 'rgba(26,18,9,0.14)',
+                background: '#ece2c6',
+              }}
             >
+              {/* Category Pills */}
               <div className="flex gap-1">
                 {[
                   { id: 'all', label: 'ALL' },
-                  { id: 'nature', label: 'NATURE' },
-                  { id: 'cinematic', label: 'CINEMA' },
-                  { id: 'retro', label: 'RETRO' },
+                  { id: 'nature', label: 'BOTANICA' },
+                  { id: 'cinematic', label: 'OPTICA' },
                 ].map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setGraphicFilter(cat.id as any)}
                     className="px-2 py-0.5 border transition cursor-pointer"
                     style={{
-                      borderColor: graphicFilter === cat.id ? '#c94f00' : 'rgba(26,18,9,0.16)',
-                      background: graphicFilter === cat.id ? '#c94f00' : 'transparent',
-                      color: graphicFilter === cat.id ? '#fff' : '#5c4e3b',
+                      borderColor: graphicFilter === cat.id ? '#c94f00' : 'rgba(26,18,9,0.18)',
+                      background: graphicFilter === cat.id ? '#c94f00' : '#f4eedb',
+                      color: graphicFilter === cat.id ? '#ffffff' : '#574836',
                     }}
                   >
                     {cat.label}
@@ -215,34 +262,40 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 ))}
               </div>
 
+              {/* Fast Presets */}
               <div className="flex gap-1">
                 <button
                   onClick={() => setActiveGraphics(['tree', 'floral', 'petals'])}
-                  className="px-1.5 py-0.5 border text-[9px] hover:bg-black/5 cursor-pointer"
-                  style={{ borderColor: 'rgba(26,18,9,0.2)', color: '#1a1209' }}
-                  title="Tree, Flower Vine, Petals"
+                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer font-bold"
+                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb', color: '#1a1209' }}
+                  title="Mount Tree, Floral Vine & Falling Petals"
                 >
-                  PRESET
+                  NATURE
+                </button>
+                <button
+                  onClick={() => setActiveGraphics(['corners', 'particles', 'stars'])}
+                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer"
+                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb', color: '#574836' }}
+                  title="Mount Viewfinder & Warm Dust"
+                >
+                  OPTIC
                 </button>
                 <button
                   onClick={() => setActiveGraphics([])}
-                  className="px-1.5 py-0.5 border text-[9px] hover:bg-black/5 cursor-pointer"
-                  style={{ borderColor: 'rgba(26,18,9,0.2)', color: '#70624e' }}
+                  className="px-1.5 py-0.5 border transition hover:bg-black/5 cursor-pointer text-[#8a7a66]"
+                  style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f4eedb' }}
+                  title="Clear All Overlays"
                 >
                   CLEAR
                 </button>
               </div>
             </div>
 
-            {/* 3-COLUMN COMPACT DENSE GRID (No emojis, actual live canvas preview) */}
-            <div className="p-2.5 overflow-y-auto">
+            {/* 3-COLUMN ARCHIVAL SPECIMEN SLIDE GRID */}
+            <div className="flex-1 p-2.5 overflow-y-auto [scrollbar-width:thin]">
               <div className="grid grid-cols-3 gap-2">
                 {GRAPHIC_OPTIONS.filter(g =>
-                  graphicFilter === 'all'
-                    ? true
-                    : graphicFilter === 'retro'
-                    ? g.category === 'retro' || g.category === 'audio'
-                    : g.category === graphicFilter
+                  graphicFilter === 'all' ? true : g.category === graphicFilter
                 ).map(g => {
                   const isActive = activeGraphics.includes(g.id);
                   return (
@@ -251,43 +304,67 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                       onClick={() => toggleGraphic(g.id)}
                       className="group flex flex-col border transition text-left cursor-pointer overflow-hidden relative"
                       style={{
-                        borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.20)',
-                        background: isActive ? '#faf6eb' : '#f5ecd8',
-                        boxShadow: isActive ? '0 0 0 1px #c94f00 inset' : 'none',
+                        borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.22)',
+                        background: isActive ? '#fcf8ec' : '#f5edd9',
+                        boxShadow: isActive ? '0 0 0 1px #c94f00 inset, 0 3px 10px rgba(201,79,0,0.12)' : 'none',
                       }}
                     >
-                      {/* Actual Miniature Graphic Canvas Thumbnail */}
+                      {/* Top Specimen Header Tag */}
+                      <div
+                        className="px-1.5 py-0.5 border-b flex items-center justify-between text-[7.5px] font-mono tracking-tight"
+                        style={{
+                          borderColor: 'rgba(26,18,9,0.12)',
+                          background: isActive ? '#f7efe0' : 'rgba(26,18,9,0.04)',
+                          color: isActive ? '#c94f00' : '#6b5c49',
+                        }}
+                      >
+                        <span className="font-bold">{g.index}</span>
+                        <span className="uppercase font-semibold tracking-tighter">
+                          {isActive ? '✓ MOUNT' : '+ ADD'}
+                        </span>
+                      </div>
+
+                      {/* Live Actual Miniature Illustration Canvas */}
                       <div
                         className="w-full aspect-square relative border-b overflow-hidden"
                         style={{ borderColor: 'rgba(26,18,9,0.12)' }}
                       >
                         <GraphicThumbnail id={g.id} />
 
-                        {/* Status Stamp */}
+                        {/* Stamp Overlay */}
                         <div
-                          className="absolute top-1 right-1 font-mono text-[8px] px-1 border tracking-tight"
+                          className="absolute bottom-1 right-1 font-mono text-[7px] px-1 border tracking-tight font-bold"
                           style={{
                             background: isActive ? '#c94f00' : 'rgba(237,228,203,0.92)',
                             color: isActive ? '#ffffff' : '#6b5c46',
                             borderColor: isActive ? '#c94f00' : 'rgba(26,18,9,0.25)',
                           }}
                         >
-                          {isActive ? 'ON' : '+'}
+                          {isActive ? 'ON' : 'OFF'}
                         </div>
                       </div>
 
-                      {/* Info Footer */}
-                      <div className="p-1.5">
-                        <div
-                          className="text-[10px] font-mono font-bold truncate leading-tight"
-                          style={{ color: isActive ? '#c94f00' : '#1a1209' }}
-                        >
-                          {g.label}
+                      {/* Title & Classification Plate */}
+                      <div className="p-1.5 flex flex-col justify-between flex-1">
+                        <div>
+                          <div
+                            className="text-[9.5px] font-mono font-bold truncate leading-tight"
+                            style={{ color: isActive ? '#c94f00' : '#1a1209' }}
+                          >
+                            {g.label}
+                          </div>
+                          <div
+                            className="text-[8px] italic truncate leading-none mt-0.5 opacity-70"
+                            style={{
+                              fontFamily: '"Cormorant Garamond", Georgia, serif',
+                              color: '#1a1209',
+                            }}
+                          >
+                            {g.sublabel}
+                          </div>
                         </div>
-                        <div
-                          className="text-[8px] font-sans truncate leading-none mt-0.5"
-                          style={{ color: '#7a6c58' }}
-                        >
+
+                        <div className="text-[7.5px] font-sans truncate mt-1 text-[#7a6c58] leading-tight">
                           {g.desc}
                         </div>
                       </div>
@@ -299,26 +376,32 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           </div>
         )}
 
-        {/* TAB: MOTION STYLES */}
+        {/* ══ TAB 2: MOTION TYPOGRAPHY ═════════════════════════════════════ */}
         {activeTab === 'styles' && (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3 border-b flex items-center justify-between"
-              style={{ borderColor: 'rgba(26,18,9,0.16)', background: '#e7dcc0' }}
+              className="p-3.5 border-b flex items-center justify-between shrink-0"
+              style={{
+                borderColor: 'rgba(26,18,9,0.18)',
+                background: '#e6dac0',
+              }}
             >
               <div>
-                <h3 className="text-xs font-mono font-bold tracking-wider uppercase" style={{ color: '#1a1209' }}>
-                  Typography Motion
+                <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
+                  TYPE ENGINES
+                </span>
+                <h3
+                  className="text-sm font-bold tracking-tight mt-0.5"
+                  style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
+                >
+                  Kinetic Typography Plates
                 </h3>
-                <p className="text-[10px] font-sans" style={{ color: '#70624e' }}>
-                  Kinetic typography engine selection
-                </p>
               </div>
               <span
-                className="text-[10px] font-mono px-2 py-0.5 border"
+                className="text-[9px] font-mono font-bold px-2 py-0.5 border"
                 style={{
-                  borderColor: 'rgba(201,79,0,0.4)',
-                  background: 'rgba(201,79,0,0.1)',
+                  borderColor: '#c94f00',
+                  background: 'rgba(201,79,0,0.12)',
                   color: '#c94f00',
                 }}
               >
@@ -326,37 +409,39 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
               </span>
             </div>
 
-            <div className="p-3 space-y-2 overflow-y-auto">
+            <div className="flex-1 p-3 space-y-2 overflow-y-auto [scrollbar-width:thin]">
               {MOTION_STYLES.map(s => {
                 const isSelected = motionStyle === s.id;
                 return (
                   <button
                     key={s.id}
                     onClick={() => setMotionStyle(s.id)}
-                    className="w-full p-2.5 border text-left transition cursor-pointer"
+                    className="w-full p-3 border text-left transition cursor-pointer relative"
                     style={{
-                      borderColor: isSelected ? '#c94f00' : 'rgba(26,18,9,0.18)',
-                      background: isSelected ? '#faf5ea' : '#f4edd9',
-                      boxShadow: isSelected ? '0 0 0 1px #c94f00 inset' : 'none',
+                      borderColor: isSelected ? '#c94f00' : 'rgba(26,18,9,0.22)',
+                      background: isSelected ? '#fcf9ec' : '#f5edd9',
+                      boxShadow: isSelected ? '0 0 0 1px #c94f00 inset, 0 2px 8px rgba(201,79,0,0.12)' : 'none',
                     }}
                   >
-                    <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center justify-between mb-1">
                       <span
-                        className="text-xs font-mono font-bold tracking-wide"
+                        className="text-xs font-mono font-extrabold tracking-wide"
                         style={{ color: isSelected ? '#c94f00' : '#1a1209' }}
                       >
                         {s.label}
                       </span>
-                      {isSelected && (
+                      {isSelected ? (
                         <span
-                          className="text-[9px] font-mono px-1.5 py-0.2 border text-white font-bold"
+                          className="text-[8px] font-mono px-1.5 py-0.5 border font-bold text-white"
                           style={{ background: '#c94f00', borderColor: '#c94f00' }}
                         >
                           ACTIVE
                         </span>
+                      ) : (
+                        <span className="text-[8px] font-mono text-[#8a7a66]">SELECT</span>
                       )}
                     </div>
-                    <p className="text-[10px] font-sans" style={{ color: '#70624e' }}>
+                    <p className="text-[10.5px] font-sans" style={{ color: '#635543' }}>
                       {s.desc}
                     </p>
                   </button>
@@ -366,22 +451,28 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
           </div>
         )}
 
-        {/* TAB: AUDIO & LYRICS */}
+        {/* ══ TAB 3: AUDIO & SYNC ══════════════════════════════════════════ */}
         {activeTab === 'audio' && (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3 border-b"
-              style={{ borderColor: 'rgba(26,18,9,0.16)', background: '#e7dcc0' }}
+              className="p-3.5 border-b shrink-0"
+              style={{
+                borderColor: 'rgba(26,18,9,0.18)',
+                background: '#e6dac0',
+              }}
             >
-              <h3 className="text-xs font-mono font-bold tracking-wider uppercase" style={{ color: '#1a1209' }}>
-                Audio & Transcription
+              <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
+                ACOUSTIC SPOOL
+              </span>
+              <h3
+                className="text-sm font-bold tracking-tight mt-0.5"
+                style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
+              >
+                Track & Whisper AI Alignment
               </h3>
-              <p className="text-[10px] font-sans" style={{ color: '#70624e' }}>
-                Upload track or align timestamps with Groq AI
-              </p>
             </div>
 
-            <div className="p-3 space-y-3 overflow-y-auto">
+            <div className="flex-1 p-3 space-y-3 overflow-y-auto [scrollbar-width:thin]">
               {/* Dropzone */}
               <div
                 className="border border-dashed p-4 text-center relative cursor-pointer hover:bg-black/5 transition"
@@ -393,11 +484,11 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                   onChange={handleAudioUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <Upload className="w-5 h-5 mx-auto mb-1" style={{ color: '#c94f00' }} />
+                <Upload className="w-5 h-5 mx-auto mb-1.5" style={{ color: '#c94f00' }} />
                 <p className="text-xs font-bold" style={{ color: '#1a1209' }}>
-                  {uploadedFile ? uploadedFile.name : 'Upload Audio File'}
+                  {uploadedFile ? uploadedFile.name : 'Upload Audio Track'}
                 </p>
-                <p className="text-[10px] font-mono mt-0.5" style={{ color: '#70624e' }}>
+                <p className="text-[9.5px] font-mono mt-0.5" style={{ color: '#70624e' }}>
                   MP3, WAV, M4A up to 25MB
                 </p>
               </div>
@@ -415,7 +506,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     value={groqKey}
                     onChange={e => setGroqKey(e.target.value)}
                     placeholder="gsk_..."
-                    className="w-full text-xs border px-2 py-1 font-mono"
+                    className="w-full text-xs border px-2 py-1.5 font-mono"
                     style={{ background: '#fbf8f0', borderColor: 'rgba(26,18,9,0.3)', color: '#1a1209' }}
                   />
                   <button
@@ -427,7 +518,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                     {isTranscribing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        {transcribeStatus || 'Transcribing...'}
+                        {transcribeStatus || 'Aligning timestamps...'}
                       </>
                     ) : (
                       <>
@@ -439,77 +530,86 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 </div>
               )}
 
-              {/* Track Metadata */}
+              {/* Track Metadata Card */}
               <div
-                className="p-2.5 border text-xs font-mono"
-                style={{ borderColor: 'rgba(26,18,9,0.18)', background: '#f8f3e5' }}
+                className="p-3 border font-mono"
+                style={{ borderColor: 'rgba(26,18,9,0.22)', background: '#f8f3e5' }}
               >
-                <div className="font-bold truncate text-[11px]" style={{ color: '#1a1209' }}>
-                  {songTitle}
-                </div>
-                <div className="text-[10px] mt-1 flex justify-between" style={{ color: '#70624e' }}>
-                  <span>{wordsCount} synced words</span>
-                  <span>{linesCount} lines</span>
-                  <span className="font-bold" style={{ color: '#c94f00' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[8px] text-[#70624e] tracking-widest uppercase">TRACK SPOOL</span>
+                  <span className="text-[9px] font-bold text-[#c94f00]">
                     {Math.floor(duration / 60)}:{(Math.floor(duration % 60) + '').padStart(2, '0')}
                   </span>
+                </div>
+                <div className="font-bold truncate text-xs" style={{ color: '#1a1209' }}>
+                  {songTitle}
+                </div>
+                <div className="text-[9.5px] mt-2 pt-2 border-t flex justify-between text-[#70624e]" style={{ borderColor: 'rgba(26,18,9,0.1)' }}>
+                  <span>{wordsCount} timed words</span>
+                  <span>{linesCount} verses</span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB: CANVAS & FORMAT */}
+        {/* ══ TAB 4: FORMAT & CANVAS DRAFTING ══════════════════════════════ */}
         {activeTab === 'canvas' && (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <div
-              className="p-3 border-b"
-              style={{ borderColor: 'rgba(26,18,9,0.16)', background: '#e7dcc0' }}
+              className="p-3.5 border-b shrink-0"
+              style={{
+                borderColor: 'rgba(26,18,9,0.18)',
+                background: '#e6dac0',
+              }}
             >
-              <h3 className="text-xs font-mono font-bold tracking-wider uppercase" style={{ color: '#1a1209' }}>
-                Format & Typography
+              <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-[#c94f00]">
+                DRAFTING RATIO
+              </span>
+              <h3
+                className="text-sm font-bold tracking-tight mt-0.5"
+                style={{ color: '#1a1209', fontFamily: '"Cormorant Garamond", Georgia, serif' }}
+              >
+                Orientation & Typography Scale
               </h3>
-              <p className="text-[10px] font-sans" style={{ color: '#70624e' }}>
-                Orientation and font scaling controls
-              </p>
             </div>
 
-            <div className="p-3 space-y-4 overflow-y-auto">
+            <div className="flex-1 p-3.5 space-y-4 overflow-y-auto [scrollbar-width:thin]">
               {/* Orientation Buttons */}
               <div>
-                <label className="text-[10px] font-mono font-bold uppercase tracking-wider block mb-1.5" style={{ color: '#70624e' }}>
-                  Orientation
+                <label className="text-[9px] font-mono font-bold uppercase tracking-wider block mb-1.5 text-[#70624e]">
+                  CANVAS ASPECT RATIO
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setOrientation('portrait')}
-                    className="p-2.5 border text-left transition cursor-pointer"
+                    className="p-3 border text-left transition cursor-pointer"
                     style={{
-                      borderColor: orientation === 'portrait' ? '#c94f00' : 'rgba(26,18,9,0.2)',
-                      background: orientation === 'portrait' ? '#faf5ea' : '#f5ecd8',
+                      borderColor: orientation === 'portrait' ? '#c94f00' : 'rgba(26,18,9,0.22)',
+                      background: orientation === 'portrait' ? '#fcf9ec' : '#f5ecd8',
                       boxShadow: orientation === 'portrait' ? '0 0 0 1px #c94f00 inset' : 'none',
                     }}
                   >
                     <div className="text-xs font-mono font-bold" style={{ color: orientation === 'portrait' ? '#c94f00' : '#1a1209' }}>
                       9:16 Portrait
                     </div>
-                    <div className="text-[9px] font-sans mt-0.5" style={{ color: '#70624e' }}>
+                    <div className="text-[9px] font-sans mt-0.5 text-[#70624e]">
                       Shorts & Reels
                     </div>
                   </button>
                   <button
                     onClick={() => setOrientation('landscape')}
-                    className="p-2.5 border text-left transition cursor-pointer"
+                    className="p-3 border text-left transition cursor-pointer"
                     style={{
-                      borderColor: orientation === 'landscape' ? '#c94f00' : 'rgba(26,18,9,0.2)',
-                      background: orientation === 'landscape' ? '#faf5ea' : '#f5ecd8',
+                      borderColor: orientation === 'landscape' ? '#c94f00' : 'rgba(26,18,9,0.22)',
+                      background: orientation === 'landscape' ? '#fcf9ec' : '#f5ecd8',
                       boxShadow: orientation === 'landscape' ? '0 0 0 1px #c94f00 inset' : 'none',
                     }}
                   >
                     <div className="text-xs font-mono font-bold" style={{ color: orientation === 'landscape' ? '#c94f00' : '#1a1209' }}>
                       16:9 Landscape
                     </div>
-                    <div className="text-[9px] font-sans mt-0.5" style={{ color: '#70624e' }}>
+                    <div className="text-[9px] font-sans mt-0.5 text-[#70624e]">
                       YouTube & Video
                     </div>
                   </button>
@@ -518,7 +618,7 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
 
               {/* Typography */}
               <div className="pt-3 border-t space-y-3" style={{ borderColor: 'rgba(26,18,9,0.14)' }}>
-                <label className="flex items-center justify-between text-xs font-mono font-semibold cursor-pointer" style={{ color: '#1a1209' }}>
+                <label className="flex items-center justify-between text-xs font-mono font-bold cursor-pointer text-[#1a1209]">
                   <span>UPPERCASE TYPOGRAPHY</span>
                   <input
                     type="checkbox"
@@ -530,8 +630,8 @@ export const StudioSidebar: React.FC<StudioSidebarProps> = ({
                 </label>
 
                 <div>
-                  <div className="flex justify-between text-xs font-mono font-semibold mb-1" style={{ color: '#70624e' }}>
-                    <span>FONT SIZE</span>
+                  <div className="flex justify-between text-xs font-mono font-bold mb-1.5 text-[#70624e]">
+                    <span>FONT SCALE</span>
                     <span style={{ color: '#c94f00' }}>{fontSize}px</span>
                   </div>
                   <input

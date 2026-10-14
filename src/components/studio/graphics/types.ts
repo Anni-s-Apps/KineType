@@ -13,9 +13,9 @@ export interface GraphicContext {
 
 export interface GraphicItem {
   id: string;
+  index: string;
   label: string;
-  category: 'nature' | 'cinematic' | 'audio' | 'retro';
-  icon: string;
+  sublabel: string;
+  category: 'nature' | 'cinematic' | 'audio';
   desc: string;
-  previewBg: string;
 }

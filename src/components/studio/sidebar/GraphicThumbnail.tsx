@@ -8,8 +8,6 @@ import { renderCorners } from '../graphics/items/corners';
 import { renderWaveform } from '../graphics/items/waveform';
 import { renderParticles } from '../graphics/items/particles';
 import { renderStars } from '../graphics/items/stars';
-import { renderVinyl } from '../graphics/items/vinyl';
-import { renderNowPlaying } from '../graphics/items/nowPlaying';
 import { C } from '../styles/types';
 
 interface Props {
@@ -25,7 +23,6 @@ export const GraphicThumbnail: React.FC<Props> = ({ id }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Render scale for crisp mini preview
     const W = 100;
     const H = 100;
     canvas.width = W;
@@ -35,8 +32,7 @@ export const GraphicThumbnail: React.FC<Props> = ({ id }) => {
     ctx.fillStyle = '#f5eedc';
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle paper grain / border
-    ctx.strokeStyle = 'rgba(26,18,9,0.08)';
+    ctx.strokeStyle = 'rgba(26,18,9,0.06)';
     ctx.strokeRect(0, 0, W, H);
 
     const gCtx = {
@@ -78,12 +74,6 @@ export const GraphicThumbnail: React.FC<Props> = ({ id }) => {
       case 'stars':
         renderStars(gCtx);
         break;
-      case 'vinyl':
-        renderVinyl(gCtx);
-        break;
-      case 'nowPlaying':
-        renderNowPlaying(gCtx);
-        break;
       default:
         break;
     }
@@ -92,7 +82,7 @@ export const GraphicThumbnail: React.FC<Props> = ({ id }) => {
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full block pointer-events-none object-cover"
+      className="w-full h-full block pointer-events-none"
       style={{ display: 'block' }}
     />
   );
